@@ -41,17 +41,15 @@ void init_test_scales() {
     // }
 }
 
-int main(void)
+void test_multiply()
 {
-    init_test_scales();
-
     struct Timer timer;
     Matrix A, B, C;
-
-    // test multiply
+    FILE *resultFile = fopen("multiply_results.csv", "w+");
+    fprintf(resultFile, "n,m,p,elapsed_ms,test_num\n");
 
     srand(0); // Reset random seed for reproducibility
-
+    
     for (int i = 0; i < test_num; ++i) {
         int n = test_scales[i].n;
         int m = test_scales[i].m;
@@ -81,9 +79,19 @@ int main(void)
 
         double elapsed_ms = timer_elapsed_ms(&timer) / test_num;
         printf("Time for multiplication (average for %d times): %.3f ms\n", test_num, elapsed_ms);
+        fprintf(resultFile, "%d,%d,%d,%.3f,%d\n", n, m, p, elapsed_ms, test_num);
 
         MatrixFree(&A); MatrixFree(&B); MatrixFree(&C);
     }
-    
+    fclose(resultFile);
+}
+
+int main(void)
+{
+    init_test_scales();
+
+    // test multiply
+    test_multiply();
+
     return 0;
 }
