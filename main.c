@@ -72,8 +72,8 @@ void test_multiply()
         error = MatrixMultiply(&A, &B, &C);
         // Check(error, "MatrixMultiply");
 
-        int scale = n * m * p;
-        printf("Scale (n*m*p): %d\n", scale);
+        long long scale = (long long)n * m * p;
+        printf("Scale (n*m*p): %lld\n", scale);
         int test_num = (1e8 / scale) + 10; // Adjust test_num based on the scale
         printf("Running multiplication test %d times...\n", test_num);
 
