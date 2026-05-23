@@ -115,6 +115,7 @@ void test_all_four_operations()
     
     // addition test
     FILE *resultFile = fopen("addition_results.csv", "w+");
+    fprintf(resultFile, "n,m,elapsed_ms,test_num\n");
     for (int i = 0; i < test_scale_num; ++i) {
         int n = test_scales[i].n;
         int m = test_scales[i].m;
@@ -125,7 +126,6 @@ void test_all_four_operations()
 
         int test_num = 2000 * 2000 / (n * m) * 100; 
         
-        fprintf(resultFile, "n,m,p,elapsed_ms,test_num\n");
         printf("Test %d: A(%d x %d) + B(%d x %d) = C(%d x %d)\n", i + 1, n, m, n, m, n, m);
         timer_start(&timer);
         for(int i = 0; i < test_num; ++i) {
@@ -133,12 +133,14 @@ void test_all_four_operations()
         }
         double elapsed_ms = timer_elapsed_ms(&timer) / test_num;
         printf("Time for addition (average for %d times): %.3f ms\n", test_num, elapsed_ms);
+        MatrixFree(&A); MatrixFree(&B); MatrixFree(&C);
         fprintf(resultFile, "%d,%d,%.3f,%d\n", n, m, elapsed_ms, test_num);
     }
     fclose(resultFile);
 
     // scaling test
     resultFile = fopen("scaling_results.csv", "w+");
+    fprintf(resultFile, "n,m,elapsed_ms,test_num\n");
     for (int i = 0; i < test_scale_num; ++i) {
         int n = test_scales[i].n;
         int m = test_scales[i].m;
@@ -148,7 +150,6 @@ void test_all_four_operations()
         
         int test_num = 2000 * 2000 / (n * m) * 100; 
         
-        fprintf(resultFile, "n,m,p,elapsed_ms,test_num\n");
         printf("Test %d: B = alpha * A, A(%d x %d) -> B(%d x %d)\n", i + 1, n, m, n, m);
         REAL alpha = rand() / RAND_MAX * 2.0 - 1.0; // Random alpha between -1 and 1
         timer_start(&timer);
@@ -158,11 +159,13 @@ void test_all_four_operations()
         double elapsed_ms = timer_elapsed_ms(&timer) / test_num;
         printf("Time for scaling (average for %d times): %.3f ms\n", test_num, elapsed_ms);
         fprintf(resultFile, "%d,%d,%.3f,%d\n", n, m, elapsed_ms, test_num);
-        fclose(resultFile);
+        MatrixFree(&A); MatrixFree(&C);
     }
+    fclose(resultFile);
 
     // transpose test
     resultFile = fopen("transpose_results.csv", "w+");
+    fprintf(resultFile, "n,m,elapsed_ms,test_num\n");
     for (int i = 0; i < test_scale_num; ++i) {
         int n = test_scales[i].n;
         int m = test_scales[i].m;
@@ -172,7 +175,6 @@ void test_all_four_operations()
         
         int test_num = 2000 * 2000 / (n * m) * 100; 
         
-        fprintf(resultFile, "n,m,p,elapsed_ms,test_num\n");
         printf("Test %d: AT = A^T, A(%d x %d) -> AT(%d x %d)\n", i + 1, n, m, m, n);
         timer_start(&timer);
         for(int i = 0; i < test_num; ++i) {
@@ -181,6 +183,7 @@ void test_all_four_operations()
         double elapsed_ms = timer_elapsed_ms(&timer) / test_num;
         printf("Time for transpose (average for %d times): %.3f ms\n", test_num, elapsed_ms);
         fprintf(resultFile, "%d,%d,%.3f,%d\n", n, m, elapsed_ms, test_num);
+        MatrixFree(&A); MatrixFree(&C);
     }
     fclose(resultFile);
 
