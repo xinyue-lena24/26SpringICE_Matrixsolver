@@ -23,15 +23,28 @@ void init_test_scales() {
     srand(0); // Reset random seed for reproducibility
 
     // test scales required
-    test_scales[0] = (testScale){100, 100, 100};
-    test_scales[1] = (testScale){1000, 1000, 1000};
-    test_scales[2] = (testScale){2000, 2000, 2000};
-    test_num = 3;
+    // test_scales[0] = (testScale){100, 100, 100};
+    // test_scales[1] = (testScale){1000, 1000, 1000};
+    // test_scales[2] = (testScale){2000, 2000, 2000};
+    // test_num = 3;
+    test_num = 0;
 
     // Generate test scales with n, m, p
-    for (int n = 16; n <= 1024; n *= 4) {
-        for (int m = 16; m <= 1024; m *= 4) {
-            for (int p = 16; p <= 1024; p *= 4) {
+    // for (int n = 16; n <= 1024; n *= 4) {
+    //     for (int m = 16; m <= 1024; m *= 4) {
+    //         for (int p = 16; p <= 1024; p *= 4) {
+    //             test_scales[test_num].n = n;
+    //             test_scales[test_num].m = m;
+    //             test_scales[test_num].p = p;
+    //             test_num++;
+    //         }
+    //     }
+    // }
+
+    // m small
+    for (int n = 32; n <= 2048; n *= 4) {
+        for (int m = 1; m <= 512; m *= 2) {
+            for (int p = 32; p <= 2048; p *= 4) {
                 test_scales[test_num].n = n;
                 test_scales[test_num].m = m;
                 test_scales[test_num].p = p;
@@ -39,6 +52,8 @@ void init_test_scales() {
             }
         }
     }
+
+    // random scales
     // for (int i = 0; i < test_num; ++i) {
     //     test_scales[i].n = rand() % 1000 + 1;
     //     test_scales[i].m = rand() % 1000 + 1;

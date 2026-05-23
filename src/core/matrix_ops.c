@@ -96,11 +96,24 @@ MatrixError MatrixMultiply(const Matrix *A, const Matrix *B, Matrix *C)
         return MATRIX_ERROR_SIZE_MISMATCH;
     }
     MatrixFillZero(C);
-    // k i j
-    for (int k = 0; k < A->column; ++k) {
+    
+    if (B->column <= 256) {
         for (int i = 0; i < A->row; ++i) {
             for (int j = 0; j < B->column; ++j) {
-                C->data[MatrixIndex(C, i, j)] += A->data[MatrixIndex(A, i, k)] * B->data[MatrixIndex(B, k, j)];
+                REAL sum = 0.0;
+                for (int k = 0; k < A->column; ++k) {
+                    sum += A->data[MatrixIndex(A, i, k)] * B->data[MatrixIndex(B, k, j)];
+                }
+                C->data[MatrixIndex(C, i, j)] = sum;
+            }
+        }
+    }
+    else {
+        for (int k = 0; k < A->column; ++k) {
+            for (int i = 0; i < A->row; ++i) {
+                for (int j = 0; j < B->column; ++j) {
+                    C->data[MatrixIndex(C, i, j)] += A->data[MatrixIndex(A, i, k)] * B->data[MatrixIndex(B, k, j)];
+                }
             }
         }
     }
