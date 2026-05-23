@@ -69,7 +69,7 @@ void test_multiply()
 
         int scale = n * m * p;
         printf("Scale (n*m*p): %d\n", scale);
-        int test_num = (1e8 / scale) + 5; // Adjust test_num based on the scale to keep total operations around 1e8
+        int test_num = (1e8 / scale) + 10; // Adjust test_num based on the scale
         printf("Running multiplication test %d times...\n", test_num);
 
         timer_start(&timer);
