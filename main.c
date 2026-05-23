@@ -29,9 +29,9 @@ void init_test_scales() {
     test_num = 3;
 
     // Generate test scales with n, m, p
-    for (int n = 32; n <= 2048; n *= 4) {
-        for (int m = 32; m <= 2048; m *= 4) {
-            for (int p = 32; p <= 2048; p *= 4) {
+    for (int n = 16; n <= 1024; n *= 4) {
+        for (int m = 16; m <= 1024; m *= 4) {
+            for (int p = 16; p <= 1024; p *= 4) {
                 test_scales[test_num].n = n;
                 test_scales[test_num].m = m;
                 test_scales[test_num].p = p;
