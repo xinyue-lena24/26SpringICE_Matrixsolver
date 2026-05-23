@@ -96,7 +96,7 @@ MatrixError MatrixMultiply(const Matrix *A, const Matrix *B, Matrix *C)
         return MATRIX_ERROR_SIZE_MISMATCH;
     }
     MatrixFillZero(C);
-    for (int k = 0; k < A->column; ++k) {
+    for (int k = 0; k < A->column; ++k) { // k i j
         for (int i = 0; i < A->row; ++i) {
             for (int j = 0; j < B->column; ++j) {
                 C->data[MatrixIndex(C, i, j)] += A->data[MatrixIndex(A, i, k)] * B->data[MatrixIndex(B, k, j)];
