@@ -97,25 +97,19 @@ MatrixError MatrixMultiply(const Matrix *A, const Matrix *B, Matrix *C)
     }
     MatrixFillZero(C);
     
-    if (B->column <= 256) {
-        for (int i = 0; i < A->row; ++i) {
-            for (int j = 0; j < B->column; ++j) {
-                REAL sum = 0.0;
-                for (int k = 0; k < A->column; ++k) {
-                    sum += A->data[MatrixIndex(A, i, k)] * B->data[MatrixIndex(B, k, j)];
-                }
-                C->data[MatrixIndex(C, i, j)] = sum;
+    Matrix BT;
+    MatrixInit(&BT);
+    MatrixCreate(&BT, B->column, B->row);
+    MatrixTranspose(B, &BT);
+    for (int i = 0; i < C->row; ++i) {
+        for (int j = 0; j < C->column; ++j) {
+            REAL sum = 0.0;
+            for (int k = 0; k < A->column; ++k) {
+                sum += A->data[MatrixIndex(A, i, k)] * BT.data[MatrixIndex(&BT, j, k)];
             }
+            C->data[MatrixIndex(C, i, j)] = sum;
         }
     }
-    else {
-        for (int k = 0; k < A->column; ++k) {
-            for (int i = 0; i < A->row; ++i) {
-                for (int j = 0; j < B->column; ++j) {
-                    C->data[MatrixIndex(C, i, j)] += A->data[MatrixIndex(A, i, k)] * B->data[MatrixIndex(B, k, j)];
-                }
-            }
-        }
-    }
+    MatrixFree(&BT);
     return MATRIX_SUCCESS;
 }
