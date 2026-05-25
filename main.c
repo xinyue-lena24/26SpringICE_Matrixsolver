@@ -30,16 +30,16 @@ void init_test_scales() {
     // test_scale_num = 0;
 
     // Generate test scales with n, m, p
-    for (int n = 16; n <= 1024; n *= 4) {
-        for (int m = 16; m <= 1024; m *= 4) {
-            for (int p = 16; p <= 1024; p *= 4) {
-                test_scales[test_scale_num].n = n;
-                test_scales[test_scale_num].m = m;
-                test_scales[test_scale_num].p = p;
-                test_scale_num++;
-            }
-        }
-    }
+    // for (int n = 16; n <= 1024; n *= 4) {
+    //     for (int m = 16; m <= 1024; m *= 4) {
+    //         for (int p = 16; p <= 1024; p *= 4) {
+    //             test_scales[test_scale_num].n = n;
+    //             test_scales[test_scale_num].m = m;
+    //             test_scales[test_scale_num].p = p;
+    //             test_scale_num++;
+    //         }
+    //     }
+    // }
 
     // m small
     // for (int n = 32; n <= 2048; n *= 4) {
@@ -217,13 +217,13 @@ int main(void)
     init_test_scales();
 
     // correctness verification
-    // correctness_verification();
+    correctness_verification();
 
     // test all four functions
-    // test_all_four_operations();
+    test_all_four_operations();
 
     // test multiply
-    test_multiply();
+    // test_multiply();
 
     return 0;
 }

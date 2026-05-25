@@ -66,8 +66,11 @@ MatrixError MatrixTranspose(const Matrix *A, Matrix *AT)
         return MATRIX_ERROR_SIZE_MISMATCH;
     }
     for (int i = 0; i < A->row; ++i) {
+        REAL* a_row = A->data + MatrixIndex(A, i, 0);
+        REAL* at_row = AT->data + MatrixIndex(AT, 0, i);
         for (int j = 0; j < A->column; ++j) {
-            AT->data[MatrixIndex(AT, j, i)] = A->data[MatrixIndex(A, i, j)];
+            *at_row = a_row[j];
+            at_row += AT->row;
         }
     }
     return MATRIX_SUCCESS;
@@ -104,8 +107,10 @@ MatrixError MatrixMultiply(const Matrix *A, const Matrix *B, Matrix *C)
     for (int i = 0; i < C->row; ++i) {
         for (int j = 0; j < C->column; ++j) {
             REAL sum = 0.0;
+            REAL* a_idx = A->data + MatrixIndex(A, i, 0);
+            REAL* b_idx = BT.data + MatrixIndex(&BT, j, 0);
             for (int k = 0; k < A->column; ++k) {
-                sum += A->data[MatrixIndex(A, i, k)] * BT.data[MatrixIndex(&BT, j, k)];
+                sum += a_idx[k] * b_idx[k];
             }
             C->data[MatrixIndex(C, i, j)] = sum;
         }
