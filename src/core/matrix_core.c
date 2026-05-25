@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void MatrixInit(Matrix *A)
+inline void MatrixInit(Matrix *A)
 {
     if (A == NULL) {
         return;
@@ -14,17 +14,17 @@ void MatrixInit(Matrix *A)
     A->data = NULL;
 }
 
-int MatrixIsValid(const Matrix *A)
+inline int MatrixIsValid(const Matrix *A)
 {
     return (A != NULL && A->row > 0 && A->column > 0 && A->data != NULL);
 }
 
-int MatrixHasShape(const Matrix *A, int row, int column)
+inline int MatrixHasShape(const Matrix *A, int row, int column)
 {
     return MatrixIsValid(A) && A->row == row && A->column == column;
 }
 
-int MatrixIndex(const Matrix *A, int i, int j)
+inline int MatrixIndex(const Matrix *A, int i, int j)
 {
     return i * A->column + j;
 }
