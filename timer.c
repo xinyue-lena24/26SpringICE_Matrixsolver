@@ -58,6 +58,9 @@ double timer_elapsed_sec(const Timer* t) {
 
 #else
 
+#define _POSIX_C_SOURCE 199309L
+#define _XOPEN_SOURCE 500
+
 #include <time.h>
 
 void timer_start(Timer* t) {
