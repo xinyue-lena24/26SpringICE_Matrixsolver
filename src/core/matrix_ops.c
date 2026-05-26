@@ -101,6 +101,9 @@ MatrixError MatrixTranspose(const Matrix *A, Matrix *AT)
     if (!MatrixIsValid(A) || !MatrixIsValid(AT)) {
         return MATRIX_ERROR_NULL_POINTER;
     }
+    if (A == AT) {
+        return MATRIX_ERROR_ALREADY_ALLOCATED; // In-place transpose is not supported
+    }
     if (AT->row != A->column || AT->column != A->row) {
         return MATRIX_ERROR_SIZE_MISMATCH;
     }
