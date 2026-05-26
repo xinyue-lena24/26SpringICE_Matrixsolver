@@ -63,6 +63,10 @@ double timer_elapsed_sec(const Timer* t) {
 
 #include <time.h>
 
+/**
+ * @brief Start the timer by recording the current value of the monotonic clock. This function initializes the timer and then retrieves the current clock value, storing it in the Timer structure for later use in calculating elapsed time.
+ * @param t Pointer to a Timer structure where the start time will be recorded.
+ */
 void timer_start(Timer* t) {
     struct timespec ts;
 
@@ -72,6 +76,11 @@ void timer_start(Timer* t) {
     t->start_nsec = ts.tv_nsec;
 }
 
+/**
+ * @brief Calculate the elapsed time in milliseconds since the timer was started. This function retrieves the current value of the monotonic clock, calculates the difference from the start time recorded in the Timer structure, and converts it to milliseconds.
+ * @param t Pointer to a Timer structure that contains the start time.
+ * @return The elapsed time in milliseconds as a double.
+ */
 double timer_elapsed_ms(const Timer* t) {
     struct timespec ts;
 
@@ -88,6 +97,11 @@ double timer_elapsed_ms(const Timer* t) {
         + (double)nsec / 1000000.0;
 }
 
+/**
+ * @brief Calculate the elapsed time in seconds since the timer was started. This function retrieves the current value of the monotonic clock, calculates the difference from the start time recorded in the Timer structure, and converts it to seconds.
+ * @param t Pointer to a Timer structure that contains the start time.
+ * @return The elapsed time in seconds as a double.
+ */
 double timer_elapsed_sec(const Timer* t) {
     return timer_elapsed_ms(t) / 1000.0;
 }
