@@ -36,4 +36,7 @@ run: $(TARGET)
 
 # 清理
 clean:
-	rm -f $(TARGET) $(OBJ) main.o
+	powershell -Command "Remove-Item -Force -ErrorAction SilentlyContinue demo, *.o, src\core\*.o, src\util\*.o"
+# 在Unix/Linux系统上使用以下命令：
+# clean:
+#	rm -f $(TARGET) $(OBJ) main.o
