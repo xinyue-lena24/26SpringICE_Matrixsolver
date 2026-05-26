@@ -77,6 +77,7 @@ void test_multiply()
 
         printf("Test %d: A(%d x %d) * B(%d x %d) = C(%d x %d)\n", i + 1, n, p, p, m, n, m);
 
+        // Create random matrices A and B, and an empty matrix C for the result
         MatrixInit(&A); MatrixInit(&B); MatrixInit(&C);
         MatrixGenerateRandom(&A, n, p, 0.0, 1.0);
         MatrixGenerateRandom(&B, p, m, 0.0, 1.0);
@@ -84,23 +85,28 @@ void test_multiply()
         // Check(error, "MatrixCreate C");
         // printf("%d\n", MatrixIsValid(&C));
 
+        // for debug
         error = MatrixMultiply(&A, &B, &C);
         // Check(error, "MatrixMultiply");
 
+        // Adjust test_num based on the scale of the operation
         long long scale = (long long)n * m * p;
         printf("Scale (n*m*p): %lld\n", scale);
-        int test_num = (1e8 / scale) + 5; // Adjust test_num based on the scale
-        printf("Running multiplication test %d times...\n", test_num);
+        int test_num = (1e8 / scale) + 5;
 
+        // Run the multiplication test and measure time
+        printf("Running multiplication test %d times...\n", test_num);
         timer_start(&timer);
         for(int i = 0; i < test_num; ++i) {
             MatrixMultiply(&A, &B, &C);
         }
 
+        // Calculate average time per multiplication
         double elapsed_ms = timer_elapsed_ms(&timer) / test_num;
         printf("Time for multiplication (average for %d times): %.3f ms\n", test_num, elapsed_ms);
         fprintf(resultFile, "%d,%d,%d,%.3f,%d\n", n, m, p, elapsed_ms, test_num);
 
+        // Free matrices
         MatrixFree(&A); MatrixFree(&B); MatrixFree(&C);
     }
     fclose(resultFile);
@@ -119,13 +125,17 @@ void test_all_four_operations()
     for (int i = 0; i < test_scale_num; ++i) {
         int n = test_scales[i].n;
         int m = test_scales[i].m;
+
+        // Create random matrices A and B, and an empty matrix C for the result
         MatrixInit(&A); MatrixInit(&B); MatrixInit(&C);
         MatrixGenerateRandom(&A, n, m, 0.0, 1.0);
         MatrixGenerateRandom(&B, n, m, 0.0, 1.0);
         MatrixCreate(&C, n, m);
 
+        // Adjust test_num based on the scale of the operation
         int test_num = 2000 * 2000 / (n * m) * 100; 
         
+        // Run the addition test and measure time
         printf("Test %d: A(%d x %d) + B(%d x %d) = C(%d x %d)\n", i + 1, n, m, n, m, n, m);
         timer_start(&timer);
         for(int i = 0; i < test_num; ++i) {
@@ -134,6 +144,8 @@ void test_all_four_operations()
         double elapsed_ms = timer_elapsed_ms(&timer) / test_num;
         printf("Time for addition (average for %d times): %.3f ms\n", test_num, elapsed_ms);
         MatrixFree(&A); MatrixFree(&B); MatrixFree(&C);
+
+        // Write results to CSV
         fprintf(resultFile, "%d,%d,%.3f,%d\n", n, m, elapsed_ms, test_num);
     }
     fclose(resultFile);
@@ -144,12 +156,16 @@ void test_all_four_operations()
     for (int i = 0; i < test_scale_num; ++i) {
         int n = test_scales[i].n;
         int m = test_scales[i].m;
+
+        // Create a random matrix A and an empty matrix C for the result
         MatrixInit(&A); MatrixInit(&C);
         MatrixGenerateRandom(&A, n, m, 0.0, 1.0);
         MatrixCreate(&C, n, m);
         
+        // Adjust test_num based on the scale of the operation
         int test_num = 2000 * 2000 / (n * m) * 100; 
         
+        // Run the scaling test and measure time
         printf("Test %d: B = alpha * A, A(%d x %d) -> B(%d x %d)\n", i + 1, n, m, n, m);
         REAL alpha = rand() / RAND_MAX * 2.0 - 1.0; // Random alpha between -1 and 1
         timer_start(&timer);
@@ -158,8 +174,10 @@ void test_all_four_operations()
         }
         double elapsed_ms = timer_elapsed_ms(&timer) / test_num;
         printf("Time for scaling (average for %d times): %.3f ms\n", test_num, elapsed_ms);
-        fprintf(resultFile, "%d,%d,%.3f,%d\n", n, m, elapsed_ms, test_num);
         MatrixFree(&A); MatrixFree(&C);
+
+        // Write results to CSV
+        fprintf(resultFile, "%d,%d,%.3f,%d\n", n, m, elapsed_ms, test_num);
     }
     fclose(resultFile);
 
@@ -169,12 +187,16 @@ void test_all_four_operations()
     for (int i = 0; i < test_scale_num; ++i) {
         int n = test_scales[i].n;
         int m = test_scales[i].m;
+
+        // Create a random matrix A and an empty matrix C for the result
         MatrixInit(&A); MatrixInit(&C);
         MatrixGenerateRandom(&A, n, m, 0.0, 1.0);
         MatrixCreate(&C, m, n);
         
+        // Adjust test_num based on the scale of the operation
         int test_num = 2000 * 2000 / (n * m) * 100; 
         
+        // Run the transpose test and measure time
         printf("Test %d: AT = A^T, A(%d x %d) -> AT(%d x %d)\n", i + 1, n, m, m, n);
         timer_start(&timer);
         for(int i = 0; i < test_num; ++i) {
@@ -182,8 +204,10 @@ void test_all_four_operations()
         }
         double elapsed_ms = timer_elapsed_ms(&timer) / test_num;
         printf("Time for transpose (average for %d times): %.3f ms\n", test_num, elapsed_ms);
-        fprintf(resultFile, "%d,%d,%.3f,%d\n", n, m, elapsed_ms, test_num);
         MatrixFree(&A); MatrixFree(&C);
+
+        // Write results to CSV
+        fprintf(resultFile, "%d,%d,%.3f,%d\n", n, m, elapsed_ms, test_num);
     }
     fclose(resultFile);
 
@@ -191,8 +215,10 @@ void test_all_four_operations()
     test_multiply();
 }
 
+/* Correctness Verification */
 void correctness_verification()
 {
+    // Create small matrices for testing
     Matrix A, B, C;
     MatrixInit(&A); MatrixInit(&B); MatrixInit(&C);
     MatrixCreate(&A, 3, 3); MatrixCreate(&B, 3, 3);
@@ -200,6 +226,7 @@ void correctness_verification()
     MatrixFillSequence(&B, 9.0, -1.0); // B = [9, 8, 7; 6, 5, 4; 3, 2, 1]
     MatrixCreate(&C, 3, 3);
 
+    // Check correctness of all four operations
     Check(MatrixAdd(&A, &B, &C), "MatrixAdd");
     MatrixPrint(&C, "A + B");
     Check(MatrixScale(2.0, &A, &C), "MatrixScale");
@@ -209,6 +236,7 @@ void correctness_verification()
     Check(MatrixMultiply(&A, &B, &C), "MatrixMultiply");
     MatrixPrint(&C, "A * B");
 
+    // Free matrices
     MatrixFree(&A); MatrixFree(&B); MatrixFree(&C);
 }
 
