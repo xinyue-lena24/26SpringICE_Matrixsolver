@@ -39,6 +39,8 @@ make clean    # 清理编译产物（.o 文件和 demo 可执行文件）
 
 Makefile 编译选项：`-std=c99 -Wall -Wextra -pedantic -O0 -g`，头文件搜索路径包含 `./src/core`、`./src/util` 和当前目录。
 
+需注意，如需在linux环境下使用 `make clean` 命令，需对Makefile文件做一定修改，将 `powershell -Command "Remove-Item -Force -ErrorAction SilentlyContinue demo, *.o, src\core\*.o, src\util\*.o"` 命令替换为 `rm -f $(TARGET) $(OBJ) main.o` 。
+
 ## 运行方法
 
 ```bash
