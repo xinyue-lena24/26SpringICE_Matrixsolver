@@ -7,3 +7,7 @@
 logs/
 temp*
 *.csv
+
+# 忽略编译生成的可执行文件
+demo
+demo.exe
