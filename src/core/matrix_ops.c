@@ -46,27 +46,6 @@ MatrixError MatrixAdd(const Matrix *A, const Matrix *B, Matrix *C)
 }
 
 /**
- * @brief Perform elementwise subtraction of two matrices A and B, storing the result in C.
- *        This function first checks if the input matrices are valid for subtraction using CheckBinaryElementwise and then performs the subtraction if the check passes.
- * @param A Pointer to the first input matrix.
- * @param B Pointer to the second input matrix.
- * @param C Pointer to the output matrix where the result will be stored.
- * @return MatrixError code indicating success or the type of error encountered.
- */
-MatrixError MatrixSub(const Matrix *A, const Matrix *B, Matrix *C)
-{
-    MatrixError error = CheckBinaryElementwise(A, B, C);
-    if (error != MATRIX_SUCCESS) {
-        return error;
-    }
-    int total = A->row * A->column;
-    for (int k = 0; k < total; ++k) {
-        C->data[k] = A->data[k] - B->data[k];
-    }
-    return MATRIX_SUCCESS;
-}
-
-/**
  * @brief Scale a matrix A by a scalar alpha, storing the result in B.
  *       This function checks if A and B are valid matrices and if they have the same shape before performing the scaling operation.
  * @param alpha The scalar value to scale the matrix A.
@@ -115,27 +94,6 @@ MatrixError MatrixTranspose(const Matrix *A, Matrix *AT)
             at_row += AT->row;
         }
     }
-    return MATRIX_SUCCESS;
-}
-
-/**
- * @brief Compute the Frobenius norm of a matrix A, storing the result in norm_value.
- *     This function checks if A is a valid matrix and if norm_value is a valid pointer before performing the computation of the Frobenius norm, which is the square root of the sum of the squares of all elements in A.
- * @param A Pointer to the input matrix for which the Frobenius norm will be computed.
- * @param norm_value Pointer to a REAL variable where the computed Frobenius norm will be stored.
- * @return MatrixError code indicating success or the type of error encountered.
- */
-MatrixError MatrixNormFrobenius(const Matrix *A, REAL *norm_value)
-{
-    if (!MatrixIsValid(A) || norm_value == NULL) {
-        return MATRIX_ERROR_NULL_POINTER;
-    }
-    REAL sum = 0.0;
-    int total = A->row * A->column;
-    for (int k = 0; k < total; ++k) {
-        sum += A->data[k] * A->data[k];
-    }
-    *norm_value = sqrt(sum);
     return MATRIX_SUCCESS;
 }
 
