@@ -24,7 +24,7 @@ code/
 ### 核心模块说明
 
 - **matrix_core**: 定义 `Matrix` 结构体（行优先一维数组存储）和 `MatrixError` 错误码体系，提供矩阵的创建、释放、元素访问、填充和打印等基础操作。
-- **matrix_ops**: 实现五种矩阵运算——`MatrixAdd`、`MatrixSub`、`MatrixScale`、`MatrixTranspose`、`MatrixMultiply`，以及 Frobenius 范数计算 `MatrixNormFrobenius`。乘法采用转置优化策略（先将 B 转置为 BT，再按行计算点积）。
+- **matrix_ops**: 实现四种矩阵运算——`MatrixAdd`、`MatrixScale`、`MatrixTranspose`、`MatrixMultiply`。乘法采用转置优化策略（先将 B 转置为 BT，再按行计算点积）。
 - **matrix_rand**: 提供随机矩阵生成功能，用于性能测试数据准备。
 - **timer**: 跨平台高精度计时器，Windows 下使用 `QueryPerformanceCounter`，Linux 下使用 `clock_gettime(CLOCK_MONOTONIC)`。
 
