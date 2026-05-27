@@ -39,7 +39,11 @@ make clean    # 清理编译产物（.o 文件和 demo 可执行文件）
 
 Makefile 编译选项：`-std=c99 -Wall -Wextra -pedantic -O0 -g`，头文件搜索路径包含 `./src/core`、`./src/util` 和当前目录。
 
-需注意，如需在linux环境下使用 `make clean` 命令，需对Makefile文件做一定修改，将 `powershell -Command "Remove-Item -Force -ErrorAction SilentlyContinue demo, *.o, src\core\*.o, src\util\*.o"` 命令替换为 `rm -f $(TARGET) $(OBJ) main.o` 。
+### 操作系统适配
+
+- 在windows环境下，可将`make`替换为`mingw32-make`
+
+- 如需在linux环境下使用 `make clean` 命令，需对Makefile文件做一定修改，将 `powershell -Command "Remove-Item -Force -ErrorAction SilentlyContinue demo, *.o, src\core\*.o, src\util\*.o"` 命令替换为 `rm -f $(TARGET) $(OBJ) main.o` 。
 
 ## 运行方法
 
@@ -57,3 +61,9 @@ make run      # 编译并运行
    - `multiply_results.csv`
 
 CSV 文件格式：各列分别为矩阵维度参数、平均耗时（ms）、测试重复次数。
+
+## 一些关于作业的声明（详见报告文档）
+
+- 程序中实现的如矩阵减法（MatrixSub）、求Frobenius 范数（MatrixNormFrobenius）等功能，为课程给出的程序框架中的原始版本，虽然没有删去，但在本次作业中**并未经过任何测验，也不保证正确性。不应将这些额外的功能视为本次作业的一部分。**
+
+- 该项目在linux环境下尚未经过完善的测试。
