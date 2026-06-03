@@ -5,6 +5,7 @@ CC = gcc
 CFLAGS = -std=c99 -Wall -Wextra -pedantic -O0 -g -lm \
          -I./src/core \
 		 -I./src/util \
+		 -I./src/algorithm \
 		 -I./
 
 # 目标
@@ -14,6 +15,8 @@ TARGET = demo
 SRC = src/core/matrix_core.c \
 	  src/core/matrix_ops.c \
 	  src/util/matrix_rand.c \
+	  src/algorithm/matrix_solve.c \
+	  src/algorithm/matrix_lu.c \
 	  timer.c
 
 # 目标文件
