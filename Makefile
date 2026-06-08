@@ -1,42 +1,46 @@
-# 编译器
 CC = gcc
+CFLAGS = -std=c99 -Wall -Wextra -pedantic -O0 -g
+CPPFLAGS = -Isrc/core -Isrc/util
+LDFLAGS = -lm
 
-# 编译选项
-CFLAGS = -std=c99 -Wall -Wextra -pedantic -O0 -g -lm \
-         -I./src/core \
-		 -I./src/util \
-		 -I./
+CORE_SRCS = src/core/matrix_core.c src/core/matrix_ops.c
+UTIL_SRCS = src/util/matrix_rand.c src/util/timer.c
+LIB_SRCS = $(CORE_SRCS) $(UTIL_SRCS)
 
-# 目标
-TARGET = demo
+TARGETS = main_basic main_timing_ops main_timing_mul
 
-# 源文件
-SRC = src/core/matrix_core.c \
-	  src/core/matrix_ops.c \
-	  src/util/matrix_rand.c \
-	  timer.c
+all: $(TARGETS)
 
-# 目标文件
-OBJ = $(SRC:.c=.o)
+main_basic: main_basic.c $(LIB_SRCS)
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ main_basic.c $(LIB_SRCS) $(LDFLAGS)
 
-# 默认目标
-all: $(TARGET)
+main_timing_ops: main_timing_ops.c $(LIB_SRCS)
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ main_timing_ops.c $(LIB_SRCS) $(LDFLAGS)
 
-# 链接
-$(TARGET): main.o $(OBJ)
-	$(CC) $(CFLAGS) -o $(TARGET) main.o $(OBJ)
+main_timing_mul: main_timing_mul.c $(LIB_SRCS)
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ main_timing_mul.c $(LIB_SRCS) $(LDFLAGS)
 
-# 编译规则（支持子目录）
-%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+results:
+	mkdir -p results
 
-# 运行
-run: $(TARGET)
-	./$(TARGET)
+run: run-basic
 
-# 清理
+run-basic: main_basic
+	./main_basic
+
+run-ops: main_timing_ops results
+	./main_timing_ops
+
+run-mul: main_timing_mul results
+	./main_timing_mul
+
+run-all: all results
+	./main_basic
+	./main_timing_ops
+	./main_timing_mul
+
 clean:
-	powershell -Command "Remove-Item -Force -ErrorAction SilentlyContinue demo, *.o, src\core\*.o, src\util\*.o"
-# 在Unix/Linux系统上使用以下命令：
-# clean:
-#	rm -f $(TARGET) $(OBJ) main.o
+	rm -f $(TARGETS) *.o *.exe *.out
+	rm -f results/*.csv
+
+.PHONY: all results run run-basic run-ops run-mul run-all clean
