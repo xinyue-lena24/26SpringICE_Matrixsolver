@@ -5,7 +5,8 @@ LDFLAGS = -lm
 
 CORE_SRCS = src/core/matrix_core.c src/core/matrix_ops.c
 UTIL_SRCS = src/util/matrix_rand.c src/util/timer.c
-LIB_SRCS = $(CORE_SRCS) $(UTIL_SRCS)
+ALGORITHM_SRCS = src/algorithm/matrix_lu.c src/algorithm/matrix_solve.c
+LIB_SRCS = $(CORE_SRCS) $(UTIL_SRCS) $(ALGORITHM_SRCS)
 
 TARGETS = main_basic main_timing_ops main_timing_mul
 
