@@ -128,6 +128,25 @@ MatrixError GaussianSolvePartialPivot(const Matrix *A, const Matrix *b, Matrix *
     return MATRIX_SUCCESS;
 }
 
+
+// Solves Ax = b using the LU decomposition of A (L and U) without pivoting
+MatrixError LUSolve(const Matrix *L, const Matrix *U, const Matrix *b, Matrix *x, REAL tol)
+{
+    Matrix y;
+    MatrixInit(&y);
+    MatrixError error = MatrixCreate(&y, b->row, 1);
+    if (error != MATRIX_SUCCESS) {
+        return error;
+    }
+    error = ForwardSubstitution(L, b, &y, tol);
+    if (error == MATRIX_SUCCESS) {
+        error = BackSubstitution(U, &y, x, tol);
+    }
+    MatrixFree(&y);
+    return error;
+}
+
+// Solves AX = B for multiple right-hand sides
 MatrixError LUDecomposeSolveMultiple(const Matrix *A, const Matrix *B, Matrix *X, REAL tol)
 {
     MatrixError error = CheckLinearSystemMultiple(A, B, X);

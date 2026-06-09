@@ -13,5 +13,7 @@
 
 MatrixError MatrixSwapRows(Matrix *A, int r1, int r2);
 MatrixError GaussianSolvePartialPivot(const Matrix *A, const Matrix *b, Matrix *x, REAL tol);
+MatrixError LUSolve(const Matrix *L, const Matrix *U, const Matrix *b, Matrix *x, REAL tol);
+MatrixError LUDecomposeSolveMultiple(const Matrix *A, const Matrix *B, Matrix *X, REAL tol);
 
 #endif
