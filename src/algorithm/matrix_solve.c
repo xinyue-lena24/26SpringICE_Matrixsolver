@@ -128,6 +128,34 @@ MatrixError GaussianSolvePartialPivot(const Matrix *A, const Matrix *b, Matrix *
     return MATRIX_SUCCESS;
 }
 
+// Raw Gaussian elimination for multiple right-hand sides (not optimized)
+MatrixError GaussianSolveMultiple(const Matrix *A, const Matrix *B, Matrix *X, REAL tol)
+{
+    MatrixError error = CheckLinearSystemMultiple(A, B, X);
+    if (error != MATRIX_SUCCESS) {
+        return error;
+    }
+    // Solve each column of B separately
+    for (int col = 0; col < B->column; ++col) {
+        Matrix b_col, x_col;
+        MatrixInit(&b_col); MatrixInit(&x_col);
+        MatrixCreate(&b_col, B->row, 1);
+        MatrixCreate(&x_col, X->row, 1);
+        for (int i = 0; i < B->row; ++i) {
+            b_col.data[i] = B->data[MatrixIndex(B, i, col)];
+        }
+        error = GaussianSolvePartialPivot(A, &b_col, &x_col, tol);
+        if (error != MATRIX_SUCCESS) {
+            MatrixFree(&b_col); MatrixFree(&x_col);
+            return error;
+        }
+        for (int i = 0; i < X->row; ++i) {
+            X->data[MatrixIndex(X, i, col)] = x_col.data[i];
+        }
+        MatrixFree(&b_col); MatrixFree(&x_col);
+    }
+    return MATRIX_SUCCESS;
+}
 
 // Solves Ax = b using the LU decomposition of A (L and U) without pivoting
 MatrixError LUSolve(const Matrix *L, const Matrix *U, const Matrix *b, Matrix *x, REAL tol)

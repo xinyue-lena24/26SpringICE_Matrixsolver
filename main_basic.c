@@ -379,15 +379,25 @@ static int TestSolveLinearSystem(void)
     MatrixSet(&B, 0, 0, 11.0); MatrixSet(&B, 0, 1, 11.0);
     MatrixSet(&B, 1, 0, 2.0); MatrixSet(&B, 1, 1, 2.0);
     MatrixSet(&B, 2, 0, 7.0); MatrixSet(&B, 2, 1, 7.0);
+    MatrixPrint(&A, "Coefficient matrix A");
+    MatrixPrint(&B, "Right-hand side matrix B");
+
+    puts("Gaussian elimination with partial pivoting for multiple right-hand sides:");
+    if (!CheckError(GaussianSolveMultiple(&A, &B, &X, 1e-9), "GaussianSolveMultiple with multiple RHS")) {
+        MatrixFree(&A);
+        MatrixFree(&B);
+        MatrixFree(&X);
+        return 0;
+    }
+    MatrixPrint(&X, "Solution matrix X");
+
+    puts("LU decomposition and solve with multiple right-hand sides:");
     if (!CheckError(LUDecomposeSolveMultiple(&A, &B, &X, 1e-9), "LUDecomposeSolveMultiple with multiple RHS")) {
         MatrixFree(&A);
         MatrixFree(&B);
         MatrixFree(&X);
         return 0;
     }
-    MatrixPrint(&A, "Coefficient matrix A");
-    MatrixPrint(&B, "Right-hand side matrix B");
-    puts("LU decomposition and solve with multiple right-hand sides:");
     MatrixPrint(&X, "Solution matrix X");
     printf("Expected: X = [[2 2]; [-1 -1]; [1 1]]\n");
     return 1;
