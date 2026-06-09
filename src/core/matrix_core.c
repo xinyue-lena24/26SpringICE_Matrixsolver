@@ -1,14 +1,24 @@
+/******************************************************************************
+ * File        : matrix_core.c
+ * Course      : C Program and Algorithm Analysis Lab
+ * Lab         : Lab 4, Matrix Multiplication
+ * Author      : Gong Helin
+ * Year        : 2026
+ * Description : Implementation of matrix creation, memory management,
+ *               element access, initialization and printing utilities.
+ ******************************************************************************/
+
 #include "matrix_core.h"
 
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-/**
- * @brief Initialize a matrix A.
- * @param A Pointer to the matrix to be initialized.
+/*
+ * 将矩阵对象初始化为空矩阵。所有 Matrix 变量在使用前均应先调用该函数。
+ * 这样可以避免未初始化指针导致的释放错误或重复分配错误。
  */
-inline void MatrixInit(Matrix *A)
+void MatrixInit(Matrix *A)
 {
     if (A == NULL) {
         return;
@@ -18,47 +28,30 @@ inline void MatrixInit(Matrix *A)
     A->data = NULL;
 }
 
-/**
- * @brief Check if a matrix A is valid (non-NULL, has positive dimensions, and has allocated data).
- * @param A Pointer to the matrix to be checked.
- * @return Non-zero if the matrix is valid, zero otherwise.
- */
-inline int MatrixIsValid(const Matrix *A)
+/* 判断矩阵对象是否处于可用状态。 */
+int MatrixIsValid(const Matrix *A)
 {
     return (A != NULL && A->row > 0 && A->column > 0 && A->data != NULL);
 }
 
-/**
- * @brief Check if a matrix A has the specified shape (row x column).
- * @param A Pointer to the matrix to be checked.
- * @param row The expected number of rows.
- * @param column The expected number of columns.
- * @return Non-zero if the matrix has the specified shape, zero otherwise.
- */
-inline int MatrixHasShape(const Matrix *A, int row, int column)
+/* 判断矩阵是否具有指定尺寸。 */
+int MatrixHasShape(const Matrix *A, int row, int column)
 {
     return MatrixIsValid(A) && A->row == row && A->column == column;
 }
 
-/**
- * @brief Calculate the index in the data array for the element at row i and column j of matrix A.
- * @param A Pointer to the matrix.
- * @param i The row index (0-based).
- * @param j The column index (0-based).
- * @return The index in the data array corresponding to the element at (i, j).
+/*
+ * row-major 存储下的二维下标到一维下标转换。
+ * 调用本函数前应保证 i 和 j 已经通过边界检查。
  */
-inline int MatrixIndex(const Matrix *A, int i, int j)
+int MatrixIndex(const Matrix *A, int i, int j)
 {
     return i * A->column + j;
 }
 
-/**
- * @brief Create a matrix A with the specified number of rows and columns, allocating memory for the data.
- *        This function checks if A is a valid pointer, if A already has allocated data (to prevent memory leaks), if the specified dimensions are positive, and if the total size does not cause overflow before allocating memory for the matrix data.
- * @param A Pointer to the matrix to be created.
- * @param row The number of rows for the matrix.
- * @param column The number of columns for the matrix.
- * @return MatrixError code indicating success or the type of error encountered.
+/*
+ * 创建 row x column 矩阵，并分配连续内存。
+ * 本函数要求 A 已经调用 MatrixInit，且当前没有持有已分配内存。
  */
 MatrixError MatrixCreate(Matrix *A, int row, int column)
 {
@@ -83,15 +76,13 @@ MatrixError MatrixCreate(Matrix *A, int row, int column)
         MatrixInit(A);
         return MATRIX_ERROR_ALLOC_FAILED;
     }
+
     A->row = row;
     A->column = column;
     return MATRIX_SUCCESS;
 }
 
-/**
- * @brief Free the memory allocated for a matrix A.
- * @param A Pointer to the matrix whose memory is to be freed.
- */
+/* 释放矩阵持有的动态内存，并将矩阵恢复为空状态。 */
 void MatrixFree(Matrix *A)
 {
     if (A == NULL) {
@@ -103,15 +94,7 @@ void MatrixFree(Matrix *A)
     A->column = 0;
 }
 
-/**
- * @brief Set the value of the element at row i and column j of matrix A to the specified value.
- *        This function checks if A is a valid matrix and if the specified indices are within the bounds of the matrix dimensions before setting the value.
- * @param A Pointer to the matrix.
- * @param i The row index (0-based).
- * @param j The column index (0-based).
- * @param value The value to be set at the specified position.
- * @return MatrixError code indicating success or the type of error encountered.
- */
+/* 设置矩阵第 (i,j) 个元素。下标采用 C 语言 0-based 规则。 */
 MatrixError MatrixSet(Matrix *A, int i, int j, REAL value)
 {
     if (!MatrixIsValid(A)) {
@@ -124,15 +107,7 @@ MatrixError MatrixSet(Matrix *A, int i, int j, REAL value)
     return MATRIX_SUCCESS;
 }
 
-/**
- * @brief Get the value of the element at row i and column j of matrix A, storing it in the variable pointed to by value.
- *        This function checks if A is a valid matrix, if value is a valid pointer, and if the specified indices are within the bounds of the matrix dimensions before retrieving the value.
- * @param A Pointer to the matrix.
- * @param i The row index (0-based).
- * @param j The column index (0-based).
- * @param value Pointer to a REAL variable where the retrieved value will be stored.
- * @return MatrixError code indicating success or the type of error encountered.
- */
+/* 读取矩阵第 (i,j) 个元素。结果通过 value 指针返回。 */
 MatrixError MatrixGet(const Matrix *A, int i, int j, REAL *value)
 {
     if (!MatrixIsValid(A) || value == NULL) {
@@ -145,12 +120,7 @@ MatrixError MatrixGet(const Matrix *A, int i, int j, REAL *value)
     return MATRIX_SUCCESS;
 }
 
-/**
- * @brief Fill all elements of a matrix A with zeros.
- *        This function checks if A is a valid matrix before filling it with zeros.
- * @param A Pointer to the matrix to be filled with zeros.
- * @return MatrixError code indicating success or the type of error encountered.
- */
+/* 将矩阵所有元素置零。 */
 MatrixError MatrixFillZero(Matrix *A)
 {
     if (!MatrixIsValid(A)) {
@@ -163,12 +133,59 @@ MatrixError MatrixFillZero(Matrix *A)
     return MATRIX_SUCCESS;
 }
 
-/**
- * @brief Fill all elements of a matrix A with a specified value.
- *        This function checks if A is a valid matrix before filling it with the specified value.
- * @param A Pointer to the matrix to be filled.
- * @param value The value to fill the matrix with.
- * @return MatrixError code indicating success or the type of error encountered.
+/*
+ * 将矩阵所有元素填充为同一个常数 value。
+ *
+ * 该函数是 MatrixFillZero 的一般化版本。
+ * 当 value = 0.0 时，其作用与 MatrixFillZero 相同。
+ */
+MatrixError MatrixFillConstant(Matrix *A, REAL value)
+{
+    if (!MatrixIsValid(A)) {
+        return MATRIX_ERROR_NULL_POINTER;
+    }
+
+    int total = A->row * A->column;
+    for (int k = 0; k < total; ++k) {
+        A->data[k] = value;
+    }
+
+    return MATRIX_SUCCESS;
+}
+
+/*
+ * 将矩阵填充为单位矩阵。
+ *
+ * 要求：
+ *   1. A 必须是有效矩阵；
+ *   2. A 必须是方阵。
+ *
+ * 数学形式：
+ *   A(i,j) = 1, if i == j;
+ *   A(i,j) = 0, otherwise.
+ */
+MatrixError MatrixFillIdentity(Matrix *A)
+{
+    if (!MatrixIsValid(A)) {
+        return MATRIX_ERROR_NULL_POINTER;
+    }
+
+    if (A->row != A->column) {
+        return MATRIX_ERROR_NOT_SQUARE;
+    }
+
+    MatrixFillZero(A);
+
+    for (int i = 0; i < A->row; ++i) {
+        A->data[MatrixIndex(A, i, i)] = 1.0;
+    }
+
+    return MATRIX_SUCCESS;
+}
+
+/*
+ * 用等差序列填充矩阵，便于课堂构造测试数据。
+ * data[k] = start + step * k。
  */
 MatrixError MatrixFillSequence(Matrix *A, REAL start, REAL step)
 {
@@ -182,13 +199,7 @@ MatrixError MatrixFillSequence(Matrix *A, REAL start, REAL step)
     return MATRIX_SUCCESS;
 }
 
-/**
- * @brief Copy the contents of a source matrix src to a destination matrix dst.
- *        This function checks if src and dst are valid matrices and if they have the same shape before performing the copy operation.
- * @param src Pointer to the source matrix to be copied.
- * @param dst Pointer to the destination matrix where the contents will be copied.
- * @return MatrixError code indicating success or the type of error encountered.
- */
+/* 将 src 的全部元素拷贝到同尺寸矩阵 dst。 */
 MatrixError MatrixCopy(const Matrix *src, Matrix *dst)
 {
     if (!MatrixIsValid(src) || !MatrixIsValid(dst)) {
@@ -204,12 +215,7 @@ MatrixError MatrixCopy(const Matrix *src, Matrix *dst)
     return MATRIX_SUCCESS;
 }
 
-/**
- * @brief Print the contents of a matrix A to the console, optionally with a name.
- *        This function checks if A is a valid matrix before printing its contents. If a name is provided, it will be printed as a header for the matrix.
- * @param A Pointer to the matrix to be printed.
- * @param name Optional name to be printed as a header for the matrix. If NULL, no name will be printed.
- */
+/* 打印矩阵，主要用于小规模矩阵的课堂验证。 */
 void MatrixPrint(const Matrix *A, const char *name)
 {
     if (name == NULL) {
@@ -219,6 +225,7 @@ void MatrixPrint(const Matrix *A, const char *name)
         printf("%s is an empty or invalid matrix.\n", name);
         return;
     }
+
     printf("%s = (%d x %d)\n", name, A->row, A->column);
     for (int i = 0; i < A->row; ++i) {
         printf("  ");
@@ -229,12 +236,7 @@ void MatrixPrint(const Matrix *A, const char *name)
     }
 }
 
-/**
- * @brief Print the index mapping of a matrix A, showing how the 2D indices (i, j) map to the 1D data array index.
- *        This function checks if A is a valid matrix before printing the index mapping. If a name is provided, it will be used in the output to identify the matrix.
- * @param A Pointer to the matrix for which the index mapping will be printed.
- * @param name Optional name to be used in the output to identify the matrix. If NULL, "Matrix" will be used as the default name.
- */
+/* 打印二维下标到一维数组下标的映射关系。 */
 void MatrixPrintIndexMap(const Matrix *A, const char *name)
 {
     if (name == NULL) {
@@ -244,6 +246,7 @@ void MatrixPrintIndexMap(const Matrix *A, const char *name)
         printf("%s is an empty or invalid matrix.\n", name);
         return;
     }
+
     printf("Index map for %s:\n", name);
     for (int i = 0; i < A->row; ++i) {
         for (int j = 0; j < A->column; ++j) {
@@ -252,11 +255,7 @@ void MatrixPrintIndexMap(const Matrix *A, const char *name)
     }
 }
 
-/**
- * @brief Get a human-readable error message corresponding to a MatrixError code.
- * @param error The MatrixError code for which the message is to be retrieved.
- * @return A string describing the error message corresponding to the provided MatrixError code.
- */
+/* 将错误码转换为便于输出的说明文字。 */
 const char *MatrixErrorMessage(MatrixError error)
 {
     switch (error) {
