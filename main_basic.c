@@ -19,6 +19,8 @@
 
 #include "matrix_core.h"
 #include "matrix_ops.h"
+#include "matrix_lu.h"
+#include "matrix_solve.h"
 
 #include <stdio.h>
 
@@ -283,6 +285,125 @@ static int TestMatrixMultiply(void)
 }
 
 /*
+ * Test Solving Linear Systems
+ * ------------------
+ * This part is not required by the assignment, but it is a good demonstration
+ * of how to use the matrix library for solving linear systems.
+ *
+ * The test case is:
+ *
+ * A = [4  -2  1]
+ *     [3   6  2]
+ *     [1   0  5]
+ *
+ * b = [11; 2; 7]
+ *
+ * The expected solution is:
+ *
+ * x = [2; -1; 1]
+*/
+
+static int TestSolveLinearSystem(void)
+{
+    printf("\n========== 5. Solving Linear Systems Example ==========\n");
+
+    Matrix A, b, x;
+    MatrixInit(&A);
+    MatrixInit(&b);
+    MatrixInit(&x);
+
+    if (!CheckError(MatrixCreate(&A, 3, 3), "MatrixCreate(A)") ||
+        !CheckError(MatrixCreate(&b, 3, 1), "MatrixCreate(b)") ||
+        !CheckError(MatrixCreate(&x, 3, 1), "MatrixCreate(x)")) {
+        MatrixFree(&A);
+        MatrixFree(&b);
+        MatrixFree(&x);
+        return 0;
+    }
+
+    // Fill A
+    MatrixSet(&A, 0, 0, 4.0); MatrixSet(&A, 0, 1, -2.0); MatrixSet(&A, 0, 2, 1.0);
+    MatrixSet(&A, 1, 0, 3.0); MatrixSet(&A, 1, 1, 6.0); MatrixSet(&A, 1, 2, 2.0);
+    MatrixSet(&A, 2, 0, 1.0); MatrixSet(&A, 2, 1, 0.0); MatrixSet(&A, 2, 2, 5.0);
+
+    // Fill b
+    MatrixSet(&b, 0, 0, 11.0);
+    MatrixSet(&b, 1, 0, 2.0);
+    MatrixSet(&b, 2, 0, 7.0);
+
+    // Gaussian elimination
+    if (!CheckError(GaussianSolvePartialPivot(&A, &b, &x, 1e-9), "GaussianSolvePartialPivot")) {
+        MatrixFree(&A);
+        MatrixFree(&b);
+        MatrixFree(&x);
+        return 0;
+    }
+
+    MatrixPrint(&A, "Coefficient matrix A");
+    MatrixPrint(&b, "Right-hand side vector b");
+
+    puts("Gaussian elimination with partial pivoting:");
+    MatrixPrint(&x, "Solution vector x");
+    printf("Expected: x = [2; -1; 1]\n");
+
+    // LU decomposition and solve
+    if (!CheckError(LUDecomposeSolveMultiple(&A, &b, &x, 1e-9), "LUDecomposeSolveMultiple")) {
+        MatrixFree(&A);
+        MatrixFree(&b);
+        MatrixFree(&x);
+        return 0;
+    }
+
+    MatrixPrint(&A, "Coefficient matrix A");
+    MatrixPrint(&b, "Right-hand side vector b");
+
+    puts("LU decomposition and solve:");
+    MatrixPrint(&x, "Solution vector x");
+    printf("Expected: x = [2; -1; 1]\n");
+
+    MatrixFree(&b);
+    MatrixFree(&x);
+
+    // Test multiple right-hand sides
+    Matrix B, X;
+    MatrixInit(&B);
+    MatrixInit(&X);
+    if (!CheckError(MatrixCreate(&B, 3, 2), "MatrixCreate(B)") ||
+        !CheckError(MatrixCreate(&X, 3, 2), "MatrixCreate(X)")) {
+        MatrixFree(&A);
+        MatrixFree(&B);
+        MatrixFree(&X);
+        return 0;
+    }
+    // Fill B with two right-hand side vectors
+    MatrixSet(&B, 0, 0, 11.0); MatrixSet(&B, 0, 1, 11.0);
+    MatrixSet(&B, 1, 0, 2.0); MatrixSet(&B, 1, 1, 2.0);
+    MatrixSet(&B, 2, 0, 7.0); MatrixSet(&B, 2, 1, 7.0);
+    MatrixPrint(&A, "Coefficient matrix A");
+    MatrixPrint(&B, "Right-hand side matrix B");
+
+    puts("Gaussian elimination with partial pivoting for multiple right-hand sides:");
+    if (!CheckError(GaussianSolveMultiple(&A, &B, &X, 1e-9), "GaussianSolveMultiple with multiple RHS")) {
+        MatrixFree(&A);
+        MatrixFree(&B);
+        MatrixFree(&X);
+        return 0;
+    }
+    MatrixPrint(&X, "Solution matrix X");
+
+    puts("LU decomposition and solve with multiple right-hand sides:");
+    if (!CheckError(LUDecomposeSolveMultiple(&A, &B, &X, 1e-9), "LUDecomposeSolveMultiple with multiple RHS")) {
+        MatrixFree(&A);
+        MatrixFree(&B);
+        MatrixFree(&X);
+        return 0;
+    }
+    MatrixPrint(&X, "Solution matrix X");
+    printf("Expected: X = [[2 2]; [-1 -1]; [1 1]]\n");
+    return 1;
+}
+
+/*
  * TestErrorHandling
  * -----------------
  * This function demonstrates that the library can detect obvious dimension
@@ -339,6 +460,7 @@ int main(void)
     if (!TestMatrixScale()) return 1;
     if (!TestMatrixTranspose()) return 1;
     if (!TestMatrixMultiply()) return 1;
+    if (!TestSolveLinearSystem()) return 1;
 
     TestErrorHandling();
 
