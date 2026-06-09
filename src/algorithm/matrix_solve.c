@@ -174,6 +174,21 @@ MatrixError LUSolve(const Matrix *L, const Matrix *U, const Matrix *b, Matrix *x
     return error;
 }
 
+MatrixError LUSolveMultiple(const Matrix *L, const Matrix *U, const Matrix *B, Matrix *X, REAL tol){
+    Matrix Y;
+    MatrixInit(&Y);
+    MatrixError error = MatrixCreate(&Y, B->row, B->column);
+    if (error != MATRIX_SUCCESS) {
+        return error;
+    }
+    error = ForwardSubstitutionMultiple(L, B, &Y, tol);
+    if (error == MATRIX_SUCCESS) {
+        error = BackSubstitutionMultiple(U, &Y, X, tol);
+    }
+    MatrixFree(&Y);
+    return error;
+}
+
 // Solves AX = B for multiple right-hand sides
 MatrixError LUDecomposeSolveMultiple(const Matrix *A, const Matrix *B, Matrix *X, REAL tol)
 {
@@ -193,29 +208,7 @@ MatrixError LUDecomposeSolveMultiple(const Matrix *A, const Matrix *B, Matrix *X
         return error;
     }
     
-    // Solve columes of X one by one
-    Matrix b_col, x_col;
-    MatrixInit(&b_col); MatrixInit(&x_col);
-    MatrixCreate(&b_col, n, 1);
-    MatrixCreate(&x_col, n, 1);
-    for(int col = 0; col < B->column; ++col) {
-        // Extract the current column of B as the right-hand side vector
-        for (int i = 0; i < n; ++i) {
-            b_col.data[i] = B->data[MatrixIndex(B, i, col)];
-        }
-        // Solve L(Ux) = b_col
-        error = LUSolve(&L, &U, &b_col, &x_col, tol);
-        if (error != MATRIX_SUCCESS) {
-            MatrixFree(&L); MatrixFree(&U);
-            MatrixFree(&b_col); MatrixFree(&x_col);
-            return error;
-        }
-        // Copy solution to X
-        for (int i = 0; i < n; ++i) {
-            X->data[MatrixIndex(X, i, col)] = x_col.data[i];
-        }
-    }
-    MatrixFree(&b_col); MatrixFree(&x_col);
+    error = LUSolveMultiple(&L, &U, B, X, tol);
     MatrixFree(&L); MatrixFree(&U);
     return error;
 }

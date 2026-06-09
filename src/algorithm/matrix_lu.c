@@ -67,6 +67,35 @@ MatrixError ForwardSubstitution(const Matrix *L, const Matrix *b, Matrix *y, REA
     return MATRIX_SUCCESS;
 }
 
+MatrixError ForwardSubstitutionMultiple(const Matrix *L, const Matrix *B, Matrix *Y, REAL tol)
+{
+    if (!MatrixIsValid(L) || !MatrixIsValid(B) || !MatrixIsValid(Y)) {
+        return MATRIX_ERROR_NULL_POINTER;
+    }
+    int n = L->row;
+    if (L->row != L->column || B->row != n || Y->row != n || B->column != Y->column) {
+        return MATRIX_ERROR_SIZE_MISMATCH;
+    }
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < B->column; ++j) {
+            Y->data[MatrixIndex(Y, i, j)] = B->data[MatrixIndex(B, i, j)];
+        }
+        for (int j = 0; j < i; ++j) {
+            for (int col = 0; col < B->column; ++col) {
+                Y->data[MatrixIndex(Y, i, col)] -= L->data[MatrixIndex(L, i, j)] * Y->data[MatrixIndex(Y, j, col)];
+            }
+        }
+        REAL diag = L->data[MatrixIndex(L, i, i)];
+        if (fabs(diag) < tol) {
+            return MATRIX_ERROR_SINGULAR;
+        }
+        for (int col = 0; col < B->column; ++col) {
+            Y->data[MatrixIndex(Y, i, col)] /= diag;
+        }
+    }
+    return MATRIX_SUCCESS;
+}
+
 MatrixError BackSubstitution(const Matrix *U, const Matrix *y, Matrix *x, REAL tol)
 {
     if (!MatrixIsValid(U) || !MatrixIsValid(y) || !MatrixIsValid(x)) {
@@ -86,6 +115,35 @@ MatrixError BackSubstitution(const Matrix *U, const Matrix *y, Matrix *x, REAL t
             return MATRIX_ERROR_SINGULAR;
         }
         x->data[i] = sum / diag;
+    }
+    return MATRIX_SUCCESS;
+}
+
+MatrixError BackSubstitutionMultiple(const Matrix *U, const Matrix *Y, Matrix *X, REAL tol)
+{
+    if (!MatrixIsValid(U) || !MatrixIsValid(Y) || !MatrixIsValid(X)) {
+        return MATRIX_ERROR_NULL_POINTER;
+    }
+    int n = U->row;
+    if (U->row != U->column || Y->row != n || X->row != n || Y->column != X->column) {
+        return MATRIX_ERROR_SIZE_MISMATCH;
+    }
+    for (int i = n - 1; i >= 0; --i) {
+        for (int j = 0; j < Y->column; ++j) {
+            X->data[MatrixIndex(X, i, j)] = Y->data[MatrixIndex(Y, i, j)];
+        }
+        for (int j = i + 1; j < n; ++j) {
+            for (int col = 0; col < Y->column; ++col) {
+                X->data[MatrixIndex(X, i, col)] -= U->data[MatrixIndex(U, i, j)] * X->data[MatrixIndex(X, j, col)];
+            }
+        }
+        REAL diag = U->data[MatrixIndex(U, i, i)];
+        if (fabs(diag) < tol) {
+            return MATRIX_ERROR_SINGULAR;
+        }
+        for (int col = 0; col < Y->column; ++col) {
+            X->data[MatrixIndex(X, i, col)] /= diag;
+        }
     }
     return MATRIX_SUCCESS;
 }
