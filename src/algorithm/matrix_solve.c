@@ -7,6 +7,7 @@
 *******************************************************************************/
 
 #include "matrix_solve.h"
+#include "matrix_lu.h"
 #include <math.h>
 
 MatrixError MatrixSwapRows(Matrix *A, int r1, int r2)
@@ -42,6 +43,23 @@ static MatrixError CheckLinearSystem(const Matrix *A, const Matrix *b, Matrix *x
         return MATRIX_ERROR_SIZE_MISMATCH;
     }
     if (x->row != A->column || x->column != 1) {
+        return MATRIX_ERROR_SIZE_MISMATCH;
+    }
+    return MATRIX_SUCCESS;
+}
+
+static MatrixError CheckLinearSystemMultiple(const Matrix *A, const Matrix *B, Matrix *X)
+{
+    if (!MatrixIsValid(A) || !MatrixIsValid(B) || !MatrixIsValid(X)) {
+        return MATRIX_ERROR_NULL_POINTER;
+    }
+    if (A->row != A->column) {
+        return MATRIX_ERROR_NOT_SQUARE;
+    }
+    if (B->row != A->row) {
+        return MATRIX_ERROR_SIZE_MISMATCH;
+    }
+    if (X->row != A->column || X->column != B->column) {
         return MATRIX_ERROR_SIZE_MISMATCH;
     }
     return MATRIX_SUCCESS;
@@ -108,4 +126,52 @@ MatrixError GaussianSolvePartialPivot(const Matrix *A, const Matrix *b, Matrix *
 
     MatrixFree(&U); MatrixFree(&rhs);
     return MATRIX_SUCCESS;
+}
+
+MatrixError LUDecomposeSolveMultiple(const Matrix *A, const Matrix *B, Matrix *X, REAL tol)
+{
+    MatrixError error = CheckLinearSystemMultiple(A, B, X);
+    if (error != MATRIX_SUCCESS) {
+        return error;
+    }
+    int n = A->row;
+    Matrix L, U;
+    MatrixInit(&L); MatrixInit(&U);
+    MatrixCreate(&L, n, n);
+    MatrixCreate(&U, n, n);
+
+    error = LUDecomposeNoPivot(A, &L, &U, tol);
+    if (error != MATRIX_SUCCESS) {
+        MatrixFree(&L); MatrixFree(&U);
+        return error;
+    }
+    
+    // Solve columes of X one by one
+    for(int col = 0; col < B->column; ++col) {
+        Matrix b_col, x_col;
+        MatrixInit(&b_col); MatrixInit(&x_col);
+        MatrixCreate(&b_col, n, 1);
+        MatrixCreate(&x_col, n, 1);
+        
+        // Extract the current column of B as the right-hand side vector
+        for (int i = 0; i < n; ++i) {
+            b_col.data[i] = B->data[MatrixIndex(B, i, col)];
+        }
+
+        // Solve L(Ux) = b_col
+        error = LUSolve(&L, &U, &b_col, &x_col, tol);
+        if (error != MATRIX_SUCCESS) {
+            MatrixFree(&L); MatrixFree(&U);
+            MatrixFree(&b_col); MatrixFree(&x_col);
+            return error;
+        }
+
+        // Copy solution to X
+        for (int i = 0; i < n; ++i) {
+            X->data[MatrixIndex(X, i, col)] = x_col.data[i];
+        }
+        MatrixFree(&b_col); MatrixFree(&x_col);
+    }
+    MatrixFree(&L); MatrixFree(&U);
+    return error;
 }

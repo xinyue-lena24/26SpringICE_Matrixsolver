@@ -90,6 +90,7 @@ MatrixError BackSubstitution(const Matrix *U, const Matrix *y, Matrix *x, REAL t
     return MATRIX_SUCCESS;
 }
 
+// Solves Ax = b using the LU decomposition of A (L and U) without pivoting
 MatrixError LUSolve(const Matrix *L, const Matrix *U, const Matrix *b, Matrix *x, REAL tol)
 {
     Matrix y;
