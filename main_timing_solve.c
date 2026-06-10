@@ -21,6 +21,13 @@ static int CheckError(MatrixError error, const char *func_name)
     return 1;
 }
 
+inline static long long total_ops_gauss(int n, int m) {
+    return (long long)n * n * n * m; // Approximate total operations for solving
+}
+inline static long long total_ops_lu(int n, int m) {
+    return (long long)n * n * n + 2 * (long long)n * n * m; // Approximate total operations for LU decomposition and solve
+}
+
 typedef struct {
     int size_A;
     int col_B;
@@ -32,8 +39,12 @@ int total_scales = 0;
 Create data scale for timing tests.
 */
 void CreateScales() {
-    for (int n = 10; n <= 100; n*=10) {
-        for (int m = 1; m <= 100; m*=10) {
+    for (int n = 10; n <= 1000; n*=10) {
+        for (int m = 1; m <= 1000; m*=10) {
+            long long total_ops = total_ops_gauss(n, m);
+            if (total_ops > 1e9) { // Skip scales that are too large
+                continue;
+            }
             scales[total_scales].size_A = n;
             scales[total_scales].col_B = m;
             total_scales++;
@@ -78,7 +89,12 @@ void TestSolveFunctionForScale(MatrixError (*solving_function)(const Matrix*, co
     Timer timer;
     timer_start(&timer);
     
-    int test_num = 10; // Number of times to repeat the test for averaging
+    // Adjust the number of tests based on the size of the problem to keep total time reasonable
+    int test_num = 1e8 / total_ops_gauss(scale->size_A, scale->col_B); // Aim for around 100 million operations total
+    test_num = test_num < 5 ? 5 : test_num; // Ensure at least 5 test is run
+
+    printf("Running %d tests...\n", test_num);
+
     for (int i = 0; i < test_num; i++) {
         if (!CheckError(solving_function(&A, &B, &X, 1e-10), fun_name)) {
             MatrixFree(&A);
