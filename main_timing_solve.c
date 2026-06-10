@@ -7,7 +7,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-// #include <cblas.h>
+#include <openblas/cblas.h>
+#include <openblas/lapacke.h>
 
 /*
  * Check and print matrix library errors.
@@ -134,10 +135,73 @@ void TestSolveFunction(MatrixError (*solving_function)(const Matrix*, const Matr
     fclose(csv);
 }
 
+/* Adjust blas for tests */
+MatrixError BlasSolve(const Matrix *A, const Matrix *B, Matrix *X, REAL tol)
+{
+    if (!MatrixIsValid(A) || !MatrixIsValid(B) || !MatrixIsValid(X)) {
+        return MATRIX_ERROR_NULL_POINTER;
+    }
+    if (A->row != A->column) {
+        return MATRIX_ERROR_NOT_SQUARE;
+    }
+    if (B->row != A->row) {
+        return MATRIX_ERROR_SIZE_MISMATCH;
+    }
+    if (X->row != A->row || X->column != B->column) {
+        return MATRIX_ERROR_SIZE_MISMATCH;
+    }
+
+    int n = A->row;
+    int nrhs = B->column;
+
+    Matrix Acopy;
+    MatrixInit(&Acopy);
+
+    MatrixError err = MatrixCreate(&Acopy, n, n);
+    if (err != MATRIX_SUCCESS) {
+        return err;
+    }
+
+    MatrixCopy(A, &Acopy);
+    MatrixCopy(B, X);
+
+    lapack_int *ipiv =
+        (lapack_int *)malloc(n * sizeof(lapack_int));
+
+    if (ipiv == NULL) {
+        MatrixFree(&Acopy);
+        return MATRIX_ERROR_ALLOC_FAILED;
+    }
+
+    lapack_int info =
+        LAPACKE_dgesv(
+            LAPACK_ROW_MAJOR,
+            n,
+            nrhs,
+            Acopy.data,
+            n,
+            ipiv,
+            X->data,
+            nrhs
+        );
+
+    free(ipiv);
+    MatrixFree(&Acopy);
+    
+    if (info > 0) {
+        return MATRIX_ERROR_SINGULAR;
+    }
+
+    return MATRIX_SUCCESS;
+}
+
 int main() {
     CreateScales();
     
     TestSolveFunction(LUDecomposeSolveMultiple, "LUDecomposeSolveMultiple", "results/lu_solve_multiple.csv");
     TestSolveFunction(GaussianSolveMultiple, "GaussianSolveMultiple", "results/gaussian_solve_multiple.csv");
+    
+    // test for blas
+    TestSolveFunction(BlasSolve, "BlasSolve", "results/blas_solve.csv");
     return 0;
 }

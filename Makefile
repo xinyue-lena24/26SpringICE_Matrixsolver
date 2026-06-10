@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -std=c99 -Wall -Wextra -pedantic -O0 -g
 CPPFLAGS = -Isrc/core -Isrc/util -Isrc/algorithm
-LDFLAGS = -lm
+LDFLAGS = -lm -lopenblas
 
 CORE_SRCS = src/core/matrix_core.c src/core/matrix_ops.c
 UTIL_SRCS = src/util/matrix_rand.c src/util/timer.c
