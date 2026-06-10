@@ -8,7 +8,7 @@ UTIL_SRCS = src/util/matrix_rand.c src/util/timer.c
 ALGORITHM_SRCS = src/algorithm/matrix_lu.c src/algorithm/matrix_solve.c
 LIB_SRCS = $(CORE_SRCS) $(UTIL_SRCS) $(ALGORITHM_SRCS)
 
-TARGETS = main_basic main_timing_ops main_timing_mul
+TARGETS = main_basic main_timing_ops main_timing_mul main_timing_solve
 
 all: $(TARGETS)
 
@@ -20,6 +20,9 @@ main_timing_ops: main_timing_ops.c $(LIB_SRCS)
 
 main_timing_mul: main_timing_mul.c $(LIB_SRCS)
 	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ main_timing_mul.c $(LIB_SRCS) $(LDFLAGS)
+
+main_timing_solve: main_timing_solve.c $(LIB_SRCS)
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ main_timing_solve.c $(LIB_SRCS) $(LDFLAGS)
 
 results:
 	mkdir -p results
@@ -35,10 +38,14 @@ run-ops: main_timing_ops results
 run-mul: main_timing_mul results
 	./main_timing_mul
 
+run-solve: main_timing_solve results
+	./main_timing_solve
+
 run-all: all results
 	./main_basic
 	./main_timing_ops
 	./main_timing_mul
+	./main_timing_solve
 
 clean:
 	rm -f $(TARGETS) *.o *.exe *.out
