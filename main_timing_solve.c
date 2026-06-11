@@ -7,8 +7,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+
+// #define COMPARE_TO_BLAS
+
+#ifdef COMPARE_TO_BLAS
 #include <openblas/cblas.h>
 #include <openblas/lapacke.h>
+#endif
 
 /*
  * Check and print matrix library errors.
@@ -135,6 +140,7 @@ void TestSolveFunction(MatrixError (*solving_function)(const Matrix*, const Matr
     fclose(csv);
 }
 
+#ifdef COMPARE_TO_BLAS
 /* Adjust blas for tests */
 MatrixError BlasSolve(const Matrix *A, const Matrix *B, Matrix *X, REAL tol)
 {
@@ -194,6 +200,7 @@ MatrixError BlasSolve(const Matrix *A, const Matrix *B, Matrix *X, REAL tol)
 
     return MATRIX_SUCCESS;
 }
+#endif
 
 int main() {
     CreateScales();
@@ -202,7 +209,9 @@ int main() {
     TestSolveFunction(GaussianSolveMatrix, "GaussianSolveMatrix", "results/gaussian_solve_matrix.csv");
     TestSolveFunction(LUFactorPivotSolveMatrix, "LUFactorPivotSolveMatrix", "results/lu_pivot_solve_matrix.csv");
     
+#ifdef COMPARE_TO_BLAS
     // test for blas
     TestSolveFunction(BlasSolve, "BlasSolve", "results/blas_solve.csv");
+#endif
     return 0;
 }
