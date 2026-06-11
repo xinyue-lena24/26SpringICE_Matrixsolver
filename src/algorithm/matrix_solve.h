@@ -56,6 +56,6 @@ MatrixError LUPivotSolveMatrix(const Matrix *L, const Matrix *U, const int *pivo
  *
  *   A = L U.
  */
-MatrixError LUFactorSolvMatrix(const Matrix *A, const Matrix *B, Matrix *X, REAL tol);
+MatrixError LUFactorSolveMatrix(const Matrix *A, const Matrix *B, Matrix *X, REAL tol);
 
 #endif

@@ -536,7 +536,7 @@ MatrixError LUPivotSolveMatrix(const Matrix *L, const Matrix *U, const int *pivo
 /*
  * Solve A X = B by first computing no-pivot LU.
  */
-MatrixError LUFactorSolvMatrix(const Matrix *A, const Matrix *B, Matrix *X, REAL tol)
+MatrixError LUFactorSolveMatrix(const Matrix *A, const Matrix *B, Matrix *X, REAL tol)
 {
     MatrixError error = CheckLinearSystemMultiple(A, B, X);
     if (error != MATRIX_SUCCESS) {

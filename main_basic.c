@@ -347,7 +347,7 @@ static int TestSolveLinearSystem(void)
     printf("Expected: x = [2; -1; 1]\n");
 
     // LU decomposition and solve
-    if (!CheckError(LUFactorSolvMatrix(&A, &b, &x, 1e-9), "LUFactorSolvMatrix")) {
+    if (!CheckError(LUFactorSolveMatrix(&A, &b, &x, 1e-9), "LUFactorSolveMatrix")) {
         MatrixFree(&A);
         MatrixFree(&b);
         MatrixFree(&x);
@@ -392,7 +392,7 @@ static int TestSolveLinearSystem(void)
     MatrixPrint(&X, "Solution matrix X");
 
     puts("LU decomposition and solve with multiple right-hand sides:");
-    if (!CheckError(LUFactorSolvMatrix(&A, &B, &X, 1e-9), "LUFactorSolvMatrix with multiple RHS")) {
+    if (!CheckError(LUFactorSolveMatrix(&A, &B, &X, 1e-9), "LUFactorSolveMatrix with multiple RHS")) {
         MatrixFree(&A);
         MatrixFree(&B);
         MatrixFree(&X);

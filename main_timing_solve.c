@@ -198,7 +198,7 @@ MatrixError BlasSolve(const Matrix *A, const Matrix *B, Matrix *X, REAL tol)
 int main() {
     CreateScales();
     
-    TestSolveFunction(LUFactorSolvMatrix, "LUFactorSolvMatrix", "results/lu_solve_matrix.csv");
+    TestSolveFunction(LUFactorSolveMatrix, "LUFactorSolveMatrix", "results/lu_solve_matrix.csv");
     TestSolveFunction(GaussianSolveMatrix, "GaussianSolveMatrix", "results/gaussian_solve_matrix.csv");
     
     // test for blas
