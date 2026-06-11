@@ -2,6 +2,7 @@
 #include "matrix_lu.h"
 
 #include <math.h>
+#include <stdlib.h>
 
 /*
  * Swap two rows of a matrix.
@@ -565,6 +566,49 @@ MatrixError LUFactorSolveMatrix(const Matrix *A, const Matrix *B, Matrix *X, REA
         error = LUSolveMatrix(&L, &U, B, X, tol);
     }
 
+    MatrixFree(&L);
+    MatrixFree(&U);
+    return error;
+}
+
+MatrixError LUFactorPivotSolveMatrix(const Matrix *A, const Matrix *B, Matrix *X, REAL tol)
+{
+    MatrixError error = CheckLinearSystemMultiple(A, B, X);
+    if (error != MATRIX_SUCCESS) {
+        return error;
+    }
+
+    int n = A->row;
+
+    Matrix L, U;
+    MatrixInit(&L);
+    MatrixInit(&U);
+
+    int *pivot = (int *)malloc(n * sizeof(int));
+    if (pivot == NULL) {
+        return MATRIX_ERROR_ALLOC_FAILED;
+    }
+
+    error = MatrixCreate(&L, n, n);
+    if (error != MATRIX_SUCCESS) {
+        free(pivot);
+        return error;
+    }
+
+    error = MatrixCreate(&U, n, n);
+    if (error != MATRIX_SUCCESS) {
+        free(pivot);
+        MatrixFree(&L);
+        return error;
+    }
+
+    int swap_count;
+    error = LUDecomposePartialPivot(A, &L, &U, pivot, &swap_count, tol);
+    if (error == MATRIX_SUCCESS) {
+        error = LUPivotSolveMatrix(&L, &U, pivot, B, X, tol);
+    }
+
+    free(pivot);
     MatrixFree(&L);
     MatrixFree(&U);
     return error;

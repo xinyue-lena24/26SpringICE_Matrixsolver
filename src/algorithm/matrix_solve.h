@@ -58,4 +58,11 @@ MatrixError LUPivotSolveMatrix(const Matrix *L, const Matrix *U, const int *pivo
  */
 MatrixError LUFactorSolveMatrix(const Matrix *A, const Matrix *B, Matrix *X, REAL tol);
 
+/*
+ * Solve A X = B by first computing pivoted LU:
+ *
+ *   P A = L U.
+ */
+MatrixError LUFactorPivotSolveMatrix(const Matrix *A, const Matrix *B, Matrix *X, REAL tol);
+
 #endif

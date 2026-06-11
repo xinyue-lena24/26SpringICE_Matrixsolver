@@ -200,6 +200,7 @@ int main() {
     
     TestSolveFunction(LUFactorSolveMatrix, "LUFactorSolveMatrix", "results/lu_solve_matrix.csv");
     TestSolveFunction(GaussianSolveMatrix, "GaussianSolveMatrix", "results/gaussian_solve_matrix.csv");
+    TestSolveFunction(LUFactorPivotSolveMatrix, "LUFactorPivotSolveMatrix", "results/lu_pivot_solve_matrix.csv");
     
     // test for blas
     TestSolveFunction(BlasSolve, "BlasSolve", "results/blas_solve.csv");

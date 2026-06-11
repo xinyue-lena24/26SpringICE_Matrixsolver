@@ -399,6 +399,16 @@ static int TestSolveLinearSystem(void)
         return 0;
     }
     MatrixPrint(&X, "Solution matrix X");
+
+    puts("LU decomposition and solve with pivoting for multiple right-hand sides:");
+    if (!CheckError(LUFactorPivotSolveMatrix(&A, &B, &X, 1e-9), "LUFactorPivotSolveMatrix with multiple RHS")) {
+        MatrixFree(&A);
+        MatrixFree(&B);
+        MatrixFree(&X);
+        return 0;
+    }
+    MatrixPrint(&X, "Solution matrix X");
+
     printf("Expected: X = [[2 2]; [-1 -1]; [1 1]]\n");
     return 1;
 }
