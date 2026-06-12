@@ -11,8 +11,8 @@
 // #define COMPARE_TO_BLAS
 
 #ifdef COMPARE_TO_BLAS
-#include <openblas/cblas.h>
-#include <openblas/lapacke.h>
+#include <cblas.h>
+#include <lapacke.h>
 #endif
 
 /*

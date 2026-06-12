@@ -1,0 +1,9 @@
+name: c_matrix
+
+channels:
+  - conda-forge
+
+dependencies:
+  - openblas
+  - liblapack
+  - liblapacke
