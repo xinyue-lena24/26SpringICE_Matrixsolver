@@ -2,6 +2,7 @@
 #include "matrix_lu.h"
 
 #include <math.h>
+#include <stdlib.h>
 
 /*
  * Swap two rows of a matrix.
@@ -35,7 +36,7 @@ MatrixError MatrixSwapRows(Matrix *A, int r1, int r2)
 /*
  * Check A x = b.
  */
-static MatrixError CheckLinearSystem(const Matrix *A, const Matrix *b, Matrix *x)
+static MatrixError CheckLinearSystemVector(const Matrix *A, const Matrix *b, Matrix *x)
 {
     if (!MatrixIsValid(A) || !MatrixIsValid(b) || !MatrixIsValid(x)) {
         return MATRIX_ERROR_NULL_POINTER;
@@ -56,7 +57,7 @@ static MatrixError CheckLinearSystem(const Matrix *A, const Matrix *b, Matrix *x
 /*
  * Check A X = B.
  */
-static MatrixError CheckLinearSystemMultiple(const Matrix *A, const Matrix *B, Matrix *X)
+static MatrixError CheckLinearSystemMatrix(const Matrix *A, const Matrix *B, Matrix *X)
 {
     if (!MatrixIsValid(A) || !MatrixIsValid(B) || !MatrixIsValid(X)) {
         return MATRIX_ERROR_NULL_POINTER;
@@ -77,7 +78,7 @@ static MatrixError CheckLinearSystemMultiple(const Matrix *A, const Matrix *B, M
 /*
  * Check L U x = b.
  */
-static MatrixError CheckLUSystem(const Matrix *L, const Matrix *U, const Matrix *b, Matrix *x)
+static MatrixError CheckLUSystemVector(const Matrix *L, const Matrix *U, const Matrix *b, Matrix *x)
 {
     if (!MatrixIsValid(L) || !MatrixIsValid(U) || !MatrixIsValid(b) || !MatrixIsValid(x)) {
         return MATRIX_ERROR_NULL_POINTER;
@@ -102,7 +103,7 @@ static MatrixError CheckLUSystem(const Matrix *L, const Matrix *U, const Matrix 
 /*
  * Check L U X = B.
  */
-static MatrixError CheckLUSystemMultiple(const Matrix *L, const Matrix *U, const Matrix *B, Matrix *X)
+static MatrixError CheckLUSystemMatrix(const Matrix *L, const Matrix *U, const Matrix *B, Matrix *X)
 {
     if (!MatrixIsValid(L) || !MatrixIsValid(U) || !MatrixIsValid(B) || !MatrixIsValid(X)) {
         return MATRIX_ERROR_NULL_POINTER;
@@ -145,9 +146,9 @@ static MatrixError CheckPivotArray(const int *pivot, int n)
 /*
  * Solve A x = b using Gaussian elimination with partial pivoting.
  */
-MatrixError GaussianSolvePartialPivot(const Matrix *A, const Matrix *b, Matrix *x, REAL tol)
+MatrixError GaussianSolveVector(const Matrix *A, const Matrix *b, Matrix *x, REAL tol)
 {
-    MatrixError error = CheckLinearSystem(A, b, x);
+    MatrixError error = CheckLinearSystemVector(A, b, x);
     if (error != MATRIX_SUCCESS) {
         return error;
     }
@@ -241,9 +242,9 @@ MatrixError GaussianSolvePartialPivot(const Matrix *A, const Matrix *b, Matrix *
 /*
  * Solve A X = B by solving each column separately.
  */
-MatrixError GaussianSolveMultiple(const Matrix *A, const Matrix *B, Matrix *X, REAL tol)
+MatrixError GaussianSolveMatrix(const Matrix *A, const Matrix *B, Matrix *X, REAL tol)
 {
-    MatrixError error = CheckLinearSystemMultiple(A, B, X);
+    MatrixError error = CheckLinearSystemMatrix(A, B, X);
     if (error != MATRIX_SUCCESS) {
         return error;
     }
@@ -268,7 +269,7 @@ MatrixError GaussianSolveMultiple(const Matrix *A, const Matrix *B, Matrix *X, R
             b_col.data[i] = B->data[MatrixIndex(B, i, col)];
         }
 
-        error = GaussianSolvePartialPivot(A, &b_col, &x_col, tol);
+        error = GaussianSolveVector(A, &b_col, &x_col, tol);
         if (error != MATRIX_SUCCESS) {
             MatrixFree(&b_col);
             MatrixFree(&x_col);
@@ -288,9 +289,9 @@ MatrixError GaussianSolveMultiple(const Matrix *A, const Matrix *B, Matrix *X, R
 /*
  * Solve A X = B by batch Gaussian elimination.
  */
-MatrixError GaussianSolveMultipleBatch(const Matrix *A, const Matrix *B, Matrix *X, REAL tol)
+MatrixError GaussianSolveMatrixBatch(const Matrix *A, const Matrix *B, Matrix *X, REAL tol)
 {
-    MatrixError error = CheckLinearSystemMultiple(A, B, X);
+    MatrixError error = CheckLinearSystemMatrix(A, B, X);
     if (error != MATRIX_SUCCESS) {
         return error;
     }
@@ -387,9 +388,9 @@ MatrixError GaussianSolveMultipleBatch(const Matrix *A, const Matrix *B, Matrix 
 /*
  * Solve L U x = b from no-pivot LU.
  */
-MatrixError LUSolve(const Matrix *L, const Matrix *U, const Matrix *b, Matrix *x, REAL tol)
+MatrixError LUSolveVector(const Matrix *L, const Matrix *U, const Matrix *b, Matrix *x, REAL tol)
 {
-    MatrixError error = CheckLUSystem(L, U, b, x);
+    MatrixError error = CheckLUSystemVector(L, U, b, x);
     if (error != MATRIX_SUCCESS) {
         return error;
     }
@@ -414,9 +415,9 @@ MatrixError LUSolve(const Matrix *L, const Matrix *U, const Matrix *b, Matrix *x
 /*
  * Solve L U X = B from no-pivot LU.
  */
-MatrixError LUSolveMultiple(const Matrix *L, const Matrix *U, const Matrix *B, Matrix *X, REAL tol)
+MatrixError LUSolveMatrix(const Matrix *L, const Matrix *U, const Matrix *B, Matrix *X, REAL tol)
 {
-    MatrixError error = CheckLUSystemMultiple(L, U, B, X);
+    MatrixError error = CheckLUSystemMatrix(L, U, B, X);
     if (error != MATRIX_SUCCESS) {
         return error;
     }
@@ -441,9 +442,9 @@ MatrixError LUSolveMultiple(const Matrix *L, const Matrix *U, const Matrix *B, M
 /*
  * Solve L U x = P b from pivoted LU.
  */
-MatrixError LUSolveWithPivot(const Matrix *L, const Matrix *U, const int *pivot, const Matrix *b, Matrix *x, REAL tol)
+MatrixError LUPivotSolveVector(const Matrix *L, const Matrix *U, const int *pivot, const Matrix *b, Matrix *x, REAL tol)
 {
-    MatrixError error = CheckLUSystem(L, U, b, x);
+    MatrixError error = CheckLUSystemVector(L, U, b, x);
     if (error != MATRIX_SUCCESS) {
         return error;
     }
@@ -487,9 +488,9 @@ MatrixError LUSolveWithPivot(const Matrix *L, const Matrix *U, const int *pivot,
 /*
  * Solve L U X = P B from pivoted LU.
  */
-MatrixError LUSolveMultipleWithPivot(const Matrix *L, const Matrix *U, const int *pivot, const Matrix *B, Matrix *X, REAL tol)
+MatrixError LUPivotSolveMatrix(const Matrix *L, const Matrix *U, const int *pivot, const Matrix *B, Matrix *X, REAL tol)
 {
-    MatrixError error = CheckLUSystemMultiple(L, U, B, X);
+    MatrixError error = CheckLUSystemMatrix(L, U, B, X);
     if (error != MATRIX_SUCCESS) {
         return error;
     }
@@ -536,9 +537,9 @@ MatrixError LUSolveMultipleWithPivot(const Matrix *L, const Matrix *U, const int
 /*
  * Solve A X = B by first computing no-pivot LU.
  */
-MatrixError LUDecomposeSolveMultiple(const Matrix *A, const Matrix *B, Matrix *X, REAL tol)
+MatrixError LUFactorSolveMatrix(const Matrix *A, const Matrix *B, Matrix *X, REAL tol)
 {
-    MatrixError error = CheckLinearSystemMultiple(A, B, X);
+    MatrixError error = CheckLinearSystemMatrix(A, B, X);
     if (error != MATRIX_SUCCESS) {
         return error;
     }
@@ -562,9 +563,52 @@ MatrixError LUDecomposeSolveMultiple(const Matrix *A, const Matrix *B, Matrix *X
 
     error = LUDecomposeNoPivot(A, &L, &U, tol);
     if (error == MATRIX_SUCCESS) {
-        error = LUSolveMultiple(&L, &U, B, X, tol);
+        error = LUSolveMatrix(&L, &U, B, X, tol);
     }
 
+    MatrixFree(&L);
+    MatrixFree(&U);
+    return error;
+}
+
+MatrixError LUFactorPivotSolveMatrix(const Matrix *A, const Matrix *B, Matrix *X, REAL tol)
+{
+    MatrixError error = CheckLinearSystemMatrix(A, B, X);
+    if (error != MATRIX_SUCCESS) {
+        return error;
+    }
+
+    int n = A->row;
+
+    Matrix L, U;
+    MatrixInit(&L);
+    MatrixInit(&U);
+
+    int *pivot = (int *)malloc(n * sizeof(int));
+    if (pivot == NULL) {
+        return MATRIX_ERROR_ALLOC_FAILED;
+    }
+
+    error = MatrixCreate(&L, n, n);
+    if (error != MATRIX_SUCCESS) {
+        free(pivot);
+        return error;
+    }
+
+    error = MatrixCreate(&U, n, n);
+    if (error != MATRIX_SUCCESS) {
+        free(pivot);
+        MatrixFree(&L);
+        return error;
+    }
+
+    int swap_count;
+    error = LUDecomposePartialPivot(A, &L, &U, pivot, &swap_count, tol);
+    if (error == MATRIX_SUCCESS) {
+        error = LUPivotSolveMatrix(&L, &U, pivot, B, X, tol);
+    }
+
+    free(pivot);
     MatrixFree(&L);
     MatrixFree(&U);
     return error;

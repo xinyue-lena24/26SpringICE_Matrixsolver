@@ -19,43 +19,50 @@ MatrixError MatrixSwapRows(Matrix *A, int r1, int r2);
 /*
  * Solve A x = b using Gaussian elimination with partial pivoting.
  */
-MatrixError GaussianSolvePartialPivot(const Matrix *A, const Matrix *b, Matrix *x, REAL tol);
+MatrixError GaussianSolveVector(const Matrix *A, const Matrix *b, Matrix *x, REAL tol);
 
 /*
  * Solve A X = B column by column using Gaussian elimination.
  */
-MatrixError GaussianSolveMultiple(const Matrix *A, const Matrix *B, Matrix *X, REAL tol);
+MatrixError GaussianSolveMatrix(const Matrix *A, const Matrix *B, Matrix *X, REAL tol);
 
 /*
  * Solve A X = B using batch Gaussian elimination.
  */
-MatrixError GaussianSolveMultipleBatch(const Matrix *A, const Matrix *B, Matrix *X, REAL tol);
+MatrixError GaussianSolveMatrixBatch(const Matrix *A, const Matrix *B, Matrix *X, REAL tol);
 
 /*
  * Solve L U x = b from a no-pivot LU decomposition.
  */
-MatrixError LUSolve(const Matrix *L, const Matrix *U, const Matrix *b, Matrix *x, REAL tol);
+MatrixError LUSolveVector(const Matrix *L, const Matrix *U, const Matrix *b, Matrix *x, REAL tol);
 
 /*
  * Solve L U X = B from a no-pivot LU decomposition.
  */
-MatrixError LUSolveMultiple(const Matrix *L, const Matrix *U, const Matrix *B, Matrix *X, REAL tol);
+MatrixError LUSolveMatrix(const Matrix *L, const Matrix *U, const Matrix *B, Matrix *X, REAL tol);
 
 /*
  * Solve L U x = P b from a pivoted LU decomposition.
  */
-MatrixError LUSolveWithPivot(const Matrix *L, const Matrix *U, const int *pivot, const Matrix *b, Matrix *x, REAL tol);
+MatrixError LUPivotSolveVector(const Matrix *L, const Matrix *U, const int *pivot, const Matrix *b, Matrix *x, REAL tol);
 
 /*
  * Solve L U X = P B from a pivoted LU decomposition.
  */
-MatrixError LUSolveMultipleWithPivot(const Matrix *L, const Matrix *U, const int *pivot, const Matrix *B, Matrix *X, REAL tol);
+MatrixError LUPivotSolveMatrix(const Matrix *L, const Matrix *U, const int *pivot, const Matrix *B, Matrix *X, REAL tol);
 
 /*
  * Solve A X = B by first computing no-pivot LU:
  *
  *   A = L U.
  */
-MatrixError LUDecomposeSolveMultiple(const Matrix *A, const Matrix *B, Matrix *X, REAL tol);
+MatrixError LUFactorSolveMatrix(const Matrix *A, const Matrix *B, Matrix *X, REAL tol);
+
+/*
+ * Solve A X = B by first computing pivoted LU:
+ *
+ *   P A = L U.
+ */
+MatrixError LUFactorPivotSolveMatrix(const Matrix *A, const Matrix *B, Matrix *X, REAL tol);
 
 #endif

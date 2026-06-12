@@ -332,7 +332,7 @@ static int TestSolveLinearSystem(void)
     MatrixSet(&b, 2, 0, 7.0);
 
     // Gaussian elimination
-    if (!CheckError(GaussianSolvePartialPivot(&A, &b, &x, 1e-9), "GaussianSolvePartialPivot")) {
+    if (!CheckError(GaussianSolveVector(&A, &b, &x, 1e-9), "GaussianSolveVector")) {
         MatrixFree(&A);
         MatrixFree(&b);
         MatrixFree(&x);
@@ -347,7 +347,7 @@ static int TestSolveLinearSystem(void)
     printf("Expected: x = [2; -1; 1]\n");
 
     // LU decomposition and solve
-    if (!CheckError(LUDecomposeSolveMultiple(&A, &b, &x, 1e-9), "LUDecomposeSolveMultiple")) {
+    if (!CheckError(LUFactorSolveMatrix(&A, &b, &x, 1e-9), "LUFactorSolveMatrix")) {
         MatrixFree(&A);
         MatrixFree(&b);
         MatrixFree(&x);
@@ -383,7 +383,7 @@ static int TestSolveLinearSystem(void)
     MatrixPrint(&B, "Right-hand side matrix B");
 
     puts("Gaussian elimination with partial pivoting for multiple right-hand sides:");
-    if (!CheckError(GaussianSolveMultiple(&A, &B, &X, 1e-9), "GaussianSolveMultiple with multiple RHS")) {
+    if (!CheckError(GaussianSolveMatrix(&A, &B, &X, 1e-9), "GaussianSolveMatrix with multiple RHS")) {
         MatrixFree(&A);
         MatrixFree(&B);
         MatrixFree(&X);
@@ -392,13 +392,23 @@ static int TestSolveLinearSystem(void)
     MatrixPrint(&X, "Solution matrix X");
 
     puts("LU decomposition and solve with multiple right-hand sides:");
-    if (!CheckError(LUDecomposeSolveMultiple(&A, &B, &X, 1e-9), "LUDecomposeSolveMultiple with multiple RHS")) {
+    if (!CheckError(LUFactorSolveMatrix(&A, &B, &X, 1e-9), "LUFactorSolveMatrix with multiple RHS")) {
         MatrixFree(&A);
         MatrixFree(&B);
         MatrixFree(&X);
         return 0;
     }
     MatrixPrint(&X, "Solution matrix X");
+
+    puts("LU decomposition and solve with pivoting for multiple right-hand sides:");
+    if (!CheckError(LUFactorPivotSolveMatrix(&A, &B, &X, 1e-9), "LUFactorPivotSolveMatrix with multiple RHS")) {
+        MatrixFree(&A);
+        MatrixFree(&B);
+        MatrixFree(&X);
+        return 0;
+    }
+    MatrixPrint(&X, "Solution matrix X");
+
     printf("Expected: X = [[2 2]; [-1 -1]; [1 1]]\n");
     return 1;
 }
