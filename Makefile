@@ -1,7 +1,13 @@
 CC = gcc
 CFLAGS = -std=c99 -Wall -Wextra -pedantic -O0 -g
 CPPFLAGS = -Isrc/core -Isrc/util -Isrc/algorithm
-LDFLAGS = -lm -lopenblas
+LDFLAGS = -lm
+
+ifeq ($(COMPARE_TO_BLAS),1)
+	CFLAGS += -DCOMPARE_TO_BLAS
+	CPPFLAGS += -isystem $(CONDA_PREFIX)/include
+	LDFLAGS += -L$(CONDA_PREFIX)/lib -llapacke -llapack -lopenblas
+endif
 
 CORE_SRCS = src/core/matrix_core.c src/core/matrix_ops.c
 UTIL_SRCS = src/util/matrix_rand.c src/util/timer.c
@@ -51,4 +57,4 @@ clean:
 	rm -f $(TARGETS) *.o *.exe *.out
 	rm -f results/*.csv
 
-.PHONY: all results run run-basic run-ops run-mul run-all clean
+.PHONY: all results run run-basic run-ops run-mul run-solve run-all clean
