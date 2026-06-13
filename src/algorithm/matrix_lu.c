@@ -126,7 +126,7 @@ static MatrixError MatrixSwapRowsLocal(Matrix *A, int r1, int r2)
  *
  * L is unit lower triangular and U is upper triangular.
  */
-MatrixError LUDecomposeNoPivot(const Matrix *A, Matrix *L, Matrix *U, REAL tol)
+MatrixError LUDecomposeNoPivotSimple(const Matrix *A, Matrix *L, Matrix *U, REAL tol)
 {
     MatrixError error = CheckLUDecomposeInput(A, L, U);
     if (error != MATRIX_SUCCESS) {
@@ -217,13 +217,25 @@ MatrixError LUDecomposeByEliminationNoPivot(const Matrix *A, Matrix *L, Matrix *
             L->data[MatrixIndex(L, i, k)] = factor;
             U->data[MatrixIndex(U, i, k)] = 0.0;
 
+            int idx_i = MatrixIndex(U, i, 0);
+            int idx_k = MatrixIndex(U, k, 0);
             for (int j = k + 1; j < n; ++j) {
-                U->data[MatrixIndex(U, i, j)] -= factor * U->data[MatrixIndex(U, k, j)];
+                U->data[idx_i + j] -= factor * U->data[idx_k + j];
             }
         }
     }
 
     return MATRIX_SUCCESS;
+}
+
+/*
+ * Public interface for no-pivot LU:
+ *
+ *   A = L U.
+ */
+MatrixError LUDecomposeNoPivot(const Matrix *A, Matrix *L, Matrix *U, REAL tol)
+{
+    return LUDecomposeByEliminationNoPivot(A, L, U, tol);
 }
 
 /*

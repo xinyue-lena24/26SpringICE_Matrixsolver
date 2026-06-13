@@ -368,12 +368,16 @@ MatrixError GaussianSolveMatrixBatch(const Matrix *A, const Matrix *B, Matrix *X
 
             U.data[MatrixIndex(&U, i, k)] = 0.0;
 
+            int idx_U_i = MatrixIndex(&U, i, 0);
+            int idx_U_k = MatrixIndex(&U, k, 0);
             for (int j = k + 1; j < n; ++j) {
-                U.data[MatrixIndex(&U, i, j)] -= factor * U.data[MatrixIndex(&U, k, j)];
+                U.data[idx_U_i + j] -= factor * U.data[idx_U_k + j];
             }
 
+            int idx_RHS_i = MatrixIndex(&RHS, i, 0);
+            int idx_RHS_k = MatrixIndex(&RHS, k, 0);
             for (int col = 0; col < nrhs; ++col) {
-                RHS.data[MatrixIndex(&RHS, i, col)] -= factor * RHS.data[MatrixIndex(&RHS, k, col)];
+                RHS.data[idx_RHS_i + col] -= factor * RHS.data[idx_RHS_k + col];
             }
         }
     }

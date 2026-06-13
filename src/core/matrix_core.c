@@ -44,7 +44,7 @@ int MatrixHasShape(const Matrix *A, int row, int column)
  * row-major 存储下的二维下标到一维下标转换。
  * 调用本函数前应保证 i 和 j 已经通过边界检查。
  */
-int MatrixIndex(const Matrix *A, int i, int j)
+inline int MatrixIndex(const Matrix *A, int i, int j)
 {
     return i * A->column + j;
 }
