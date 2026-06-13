@@ -306,8 +306,11 @@ MatrixError LUDecomposeByEliminationPartialPivot(const Matrix *A, Matrix *L, Mat
             L->data[MatrixIndex(L, i, k)] = factor;
             U->data[MatrixIndex(U, i, k)] = 0.0;
 
+            int idx_i = MatrixIndex(U, i, 0);
+            int idx_k = MatrixIndex(U, k, 0);
+            #pragma omp simd
             for (int j = k + 1; j < n; ++j) {
-                U->data[MatrixIndex(U, i, j)] -= factor * U->data[MatrixIndex(U, k, j)];
+                U->data[idx_i + j] -= factor * U->data[idx_k + j];
             }
         }
     }

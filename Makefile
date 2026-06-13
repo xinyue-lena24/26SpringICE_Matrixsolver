@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -std=c99 -Wall -Wextra -pedantic -O0 -g
+CFLAGS = -std=c99 -Wall -Wextra -pedantic -O3 -march=native -fopenmp
 CPPFLAGS = -Isrc/core -Isrc/util -Isrc/algorithm
 LDFLAGS = -lm
 
@@ -31,7 +31,7 @@ main_timing_solve: main_timing_solve.c $(LIB_SRCS)
 	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ main_timing_solve.c $(LIB_SRCS) $(LDFLAGS)
 
 results:
-	mkdir -p results
+# 	mkdir -p results
 
 run: run-basic
 
