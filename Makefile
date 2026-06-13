@@ -5,8 +5,7 @@ LDFLAGS = -lm
 
 ifeq ($(COMPARE_TO_BLAS),1)
 	CFLAGS += -DCOMPARE_TO_BLAS
-	CPPFLAGS += -isystem $(CONDA_PREFIX)/include
-	LDFLAGS += -L$(CONDA_PREFIX)/lib -llapacke -llapack -lopenblas
+	LDFLAGS += -lopenblas
 endif
 
 CORE_SRCS = src/core/matrix_core.c src/core/matrix_ops.c
