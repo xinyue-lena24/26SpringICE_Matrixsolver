@@ -393,8 +393,11 @@ MatrixError ForwardSubstitutionMultiple(const Matrix *L, const Matrix *B, Matrix
         }
 
         for (int j = 0; j < i; ++j) {
+            int idx_Y_i = MatrixIndex(Y, i, 0);
+            int idx_L_i_j = MatrixIndex(L, i, j);
+            int idx_Y_j = MatrixIndex(Y, j, 0);
             for (int col = 0; col < nrhs; ++col) {
-                Y->data[MatrixIndex(Y, i, col)] -= L->data[MatrixIndex(L, i, j)] * Y->data[MatrixIndex(Y, j, col)];
+                Y->data[idx_Y_i + col] -= L->data[idx_L_i_j] * Y->data[idx_Y_j + col];
             }
         }
 
@@ -402,9 +405,10 @@ MatrixError ForwardSubstitutionMultiple(const Matrix *L, const Matrix *B, Matrix
         if (fabs(diag) < tol) {
             return MATRIX_ERROR_SINGULAR;
         }
-
+        
+        int idx_Y_i = MatrixIndex(Y, i, 0);
         for (int col = 0; col < nrhs; ++col) {
-            Y->data[MatrixIndex(Y, i, col)] /= diag;
+            Y->data[idx_Y_i + col] /= diag;
         }
     }
 
@@ -459,13 +463,17 @@ MatrixError BackSubstitutionMultiple(const Matrix *U, const Matrix *Y, Matrix *X
     int nrhs = Y->column;
 
     for (int i = n - 1; i >= 0; --i) {
+        int idx_X_i = MatrixIndex(X, i, 0);
+        int idx_Y_i = MatrixIndex(Y, i, 0);
         for (int col = 0; col < nrhs; ++col) {
-            X->data[MatrixIndex(X, i, col)] = Y->data[MatrixIndex(Y, i, col)];
+            X->data[idx_X_i + col] = Y->data[idx_Y_i + col];
         }
 
         for (int j = i + 1; j < n; ++j) {
+            int idx_U_i_j = MatrixIndex(U, i, j);
+            int idx_X_j = MatrixIndex(X, j, 0);
             for (int col = 0; col < nrhs; ++col) {
-                X->data[MatrixIndex(X, i, col)] -= U->data[MatrixIndex(U, i, j)] * X->data[MatrixIndex(X, j, col)];
+                X->data[idx_X_i + col] -= U->data[idx_U_i_j] * X->data[idx_X_j + col];
             }
         }
 
@@ -475,7 +483,7 @@ MatrixError BackSubstitutionMultiple(const Matrix *U, const Matrix *Y, Matrix *X
         }
 
         for (int col = 0; col < nrhs; ++col) {
-            X->data[MatrixIndex(X, i, col)] /= diag;
+            X->data[idx_X_i + col] /= diag;
         }
     }
 

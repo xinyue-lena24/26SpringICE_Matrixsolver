@@ -523,8 +523,10 @@ MatrixError LUPivotSolveMatrix(const Matrix *L, const Matrix *U, const int *pivo
     }
 
     for (int i = 0; i < n; ++i) {
+        int idx_PB = MatrixIndex(&PB, i, 0);
+        int idx_B = MatrixIndex(B, pivot[i], 0);
         for (int col = 0; col < nrhs; ++col) {
-            PB.data[MatrixIndex(&PB, i, col)] = B->data[MatrixIndex(B, pivot[i], col)];
+            PB.data[idx_PB + col] = B->data[idx_B + col];
         }
     }
 
