@@ -1,6 +1,8 @@
 #include "matrix_lu.h"
 
 #include <math.h>
+#include <string.h>
+#include <stdlib.h>
 
 /*
  * Check whether a matrix is valid and square.
@@ -126,7 +128,7 @@ static MatrixError MatrixSwapRowsLocal(Matrix *A, int r1, int r2)
  *
  * L is unit lower triangular and U is upper triangular.
  */
-MatrixError LUDecomposeNoPivot(const Matrix *A, Matrix *L, Matrix *U, REAL tol)
+MatrixError LUDecomposeNoPivotSimple(const Matrix *A, Matrix *L, Matrix *U, REAL tol)
 {
     MatrixError error = CheckLUDecomposeInput(A, L, U);
     if (error != MATRIX_SUCCESS) {
@@ -217,13 +219,25 @@ MatrixError LUDecomposeByEliminationNoPivot(const Matrix *A, Matrix *L, Matrix *
             L->data[MatrixIndex(L, i, k)] = factor;
             U->data[MatrixIndex(U, i, k)] = 0.0;
 
+            int idx_i = MatrixIndex(U, i, 0);
+            int idx_k = MatrixIndex(U, k, 0);
             for (int j = k + 1; j < n; ++j) {
-                U->data[MatrixIndex(U, i, j)] -= factor * U->data[MatrixIndex(U, k, j)];
+                U->data[idx_i + j] -= factor * U->data[idx_k + j];
             }
         }
     }
 
     return MATRIX_SUCCESS;
+}
+
+/*
+ * Public interface for no-pivot LU:
+ *
+ *   A = L U.
+ */
+MatrixError LUDecomposeNoPivot(const Matrix *A, Matrix *L, Matrix *U, REAL tol)
+{
+    return LUDecomposeByEliminationNoPivot(A, L, U, tol);
 }
 
 /*
@@ -306,8 +320,11 @@ MatrixError LUDecomposeByEliminationPartialPivot(const Matrix *A, Matrix *L, Mat
             L->data[MatrixIndex(L, i, k)] = factor;
             U->data[MatrixIndex(U, i, k)] = 0.0;
 
+            int idx_i = MatrixIndex(U, i, 0);
+            int idx_k = MatrixIndex(U, k, 0);
+            #pragma omp simd
             for (int j = k + 1; j < n; ++j) {
-                U->data[MatrixIndex(U, i, j)] -= factor * U->data[MatrixIndex(U, k, j)];
+                U->data[idx_i + j] -= factor * U->data[idx_k + j];
             }
         }
     }
@@ -373,13 +390,15 @@ MatrixError ForwardSubstitutionMultiple(const Matrix *L, const Matrix *B, Matrix
     int nrhs = B->column;
 
     for (int i = 0; i < n; ++i) {
-        for (int col = 0; col < nrhs; ++col) {
-            Y->data[MatrixIndex(Y, i, col)] = B->data[MatrixIndex(B, i, col)];
-        }
+        memcpy(&Y->data[MatrixIndex(Y, i, 0)], &B->data[MatrixIndex(B, i, 0)], nrhs * sizeof(REAL));
 
         for (int j = 0; j < i; ++j) {
+            int idx_Y_i = MatrixIndex(Y, i, 0);
+            int idx_L_i_j = MatrixIndex(L, i, j);
+            int idx_Y_j = MatrixIndex(Y, j, 0);
+            #pragma omp simd
             for (int col = 0; col < nrhs; ++col) {
-                Y->data[MatrixIndex(Y, i, col)] -= L->data[MatrixIndex(L, i, j)] * Y->data[MatrixIndex(Y, j, col)];
+                Y->data[idx_Y_i + col] -= L->data[idx_L_i_j] * Y->data[idx_Y_j + col];
             }
         }
 
@@ -387,9 +406,10 @@ MatrixError ForwardSubstitutionMultiple(const Matrix *L, const Matrix *B, Matrix
         if (fabs(diag) < tol) {
             return MATRIX_ERROR_SINGULAR;
         }
-
+        
+        int idx_Y_i = MatrixIndex(Y, i, 0);
         for (int col = 0; col < nrhs; ++col) {
-            Y->data[MatrixIndex(Y, i, col)] /= diag;
+            Y->data[idx_Y_i + col] /= diag;
         }
     }
 
@@ -444,13 +464,16 @@ MatrixError BackSubstitutionMultiple(const Matrix *U, const Matrix *Y, Matrix *X
     int nrhs = Y->column;
 
     for (int i = n - 1; i >= 0; --i) {
-        for (int col = 0; col < nrhs; ++col) {
-            X->data[MatrixIndex(X, i, col)] = Y->data[MatrixIndex(Y, i, col)];
-        }
+        int idx_X_i = MatrixIndex(X, i, 0);
+        int idx_Y_i = MatrixIndex(Y, i, 0);
+        memcpy(&X->data[idx_X_i], &Y->data[idx_Y_i], nrhs * sizeof(REAL));
 
         for (int j = i + 1; j < n; ++j) {
+            int idx_U_i_j = MatrixIndex(U, i, j);
+            int idx_X_j = MatrixIndex(X, j, 0);
+            #pragma omp simd
             for (int col = 0; col < nrhs; ++col) {
-                X->data[MatrixIndex(X, i, col)] -= U->data[MatrixIndex(U, i, j)] * X->data[MatrixIndex(X, j, col)];
+                X->data[idx_X_i + col] -= U->data[idx_U_i_j] * X->data[idx_X_j + col];
             }
         }
 
@@ -460,7 +483,7 @@ MatrixError BackSubstitutionMultiple(const Matrix *U, const Matrix *Y, Matrix *X
         }
 
         for (int col = 0; col < nrhs; ++col) {
-            X->data[MatrixIndex(X, i, col)] /= diag;
+            X->data[idx_X_i + col] /= diag;
         }
     }
 
