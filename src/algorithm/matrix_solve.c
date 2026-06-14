@@ -328,13 +328,15 @@ MatrixError GaussianSolveMatrixBatch(const Matrix *A, const Matrix *B, Matrix *X
         return error;
     }
 
+    REAL *U_data = U.data;
+    REAL *RHS_data = RHS.data;
+
     for (int k = 0; k < n - 1; ++k) {
         int pivot_row = k;
-        REAL pivot_abs = fabs(U.data[MatrixIndex(&U, k, k)]);
+        REAL pivot_abs = fabs(U_data[k * n + k]);
 
         for (int i = k + 1; i < n; ++i) {
-            REAL value_abs = fabs(U.data[MatrixIndex(&U, i, k)]);
-
+            REAL value_abs = fabs(U_data[i * n + k]);
             if (value_abs > pivot_abs) {
                 pivot_abs = value_abs;
                 pivot_row = i;
@@ -347,37 +349,41 @@ MatrixError GaussianSolveMatrixBatch(const Matrix *A, const Matrix *B, Matrix *X
             return MATRIX_ERROR_SINGULAR;
         }
 
-        error = MatrixSwapRows(&U, k, pivot_row);
-        if (error != MATRIX_SUCCESS) {
-            MatrixFree(&U);
-            MatrixFree(&RHS);
-            return error;
-        }
-
-        error = MatrixSwapRows(&RHS, k, pivot_row);
-        if (error != MATRIX_SUCCESS) {
-            MatrixFree(&U);
-            MatrixFree(&RHS);
-            return error;
-        }
-
-        REAL pivot = U.data[MatrixIndex(&U, k, k)];
-
-        for (int i = k + 1; i < n; ++i) {
-            REAL factor = U.data[MatrixIndex(&U, i, k)] / pivot;
-
-            U.data[MatrixIndex(&U, i, k)] = 0.0;
-
-            int idx_U_i = MatrixIndex(&U, i, 0);
-            int idx_U_k = MatrixIndex(&U, k, 0);
-            for (int j = k + 1; j < n; ++j) {
-                U.data[idx_U_i + j] -= factor * U.data[idx_U_k + j];
+        if (pivot_row != k) {
+            error = MatrixSwapRows(&U, k, pivot_row);
+            if (error != MATRIX_SUCCESS) {
+                MatrixFree(&U);
+                MatrixFree(&RHS);
+                return error;
             }
 
-            int idx_RHS_i = MatrixIndex(&RHS, i, 0);
-            int idx_RHS_k = MatrixIndex(&RHS, k, 0);
+            error = MatrixSwapRows(&RHS, k, pivot_row);
+            if (error != MATRIX_SUCCESS) {
+                MatrixFree(&U);
+                MatrixFree(&RHS);
+                return error;
+            }
+        }
+
+        REAL *Uk = U_data + k * n;
+        REAL *Rk = RHS_data + k * nrhs;
+        REAL pivot = Uk[k];
+
+        for (int i = k + 1; i < n; ++i) {
+            REAL *Ui = U_data + i * n;
+            REAL *Ri = RHS_data + i * nrhs;
+            REAL factor = Ui[k] / pivot;
+
+            Ui[k] = 0.0;
+
+            #pragma omp simd
+            for (int j = k + 1; j < n; ++j) {
+                Ui[j] -= factor * Uk[j];
+            }
+
+            #pragma omp simd
             for (int col = 0; col < nrhs; ++col) {
-                RHS.data[idx_RHS_i + col] -= factor * RHS.data[idx_RHS_k + col];
+                Ri[col] -= factor * Rk[col];
             }
         }
     }
