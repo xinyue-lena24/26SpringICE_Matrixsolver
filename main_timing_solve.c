@@ -110,10 +110,13 @@ void TestSolveFunctionForScale(MatrixError (*solving_function)(const Matrix*, co
         }
     }
 
-    double elapsed = timer_elapsed_ms(&timer);
-    printf("Time taken: %.6f seconds\n", elapsed);
+    double elapsed_ms = timer_elapsed_ms(&timer);
+    double avg_ms = elapsed_ms / (double)test_num;
+
+    printf("Total time: %.6f ms\n", elapsed_ms);
+    printf("Average time per solve: %.6f ms\n", avg_ms);
     if (csv != NULL) {
-        fprintf(csv, "%d,%d,%.6f,%d\n", scale->size_A, scale->col_B, elapsed, test_num);
+        fprintf(csv, "%d,%d,%.6f,%.6f,%d\n", scale->size_A, scale->col_B, elapsed_ms, avg_ms, test_num);
     }
 
     MatrixFree(&A);
@@ -133,7 +136,7 @@ void TestSolveFunction(MatrixError (*solving_function)(const Matrix*, const Matr
         fprintf(stderr, "Error: Could not open CSV file for writing.\n");
         return;
     }
-    fprintf(csv, "Size_A,Col_B,Time_ms,Test_Num\n");
+    fprintf(csv, "Size_A,Col_B,Total_Time_ms,Avg_Time_ms,Test_Num\n");
     for (int i = 0; i < total_scales; i++) {
         TestSolveFunctionForScale(solving_function, fun_name, &scales[i], csv);
     }
@@ -208,6 +211,7 @@ int main() {
     TestSolveFunction(LUFactorSolveMatrix, "LUFactorSolveMatrix", "results/lu_solve_matrix.csv");
     TestSolveFunction(GaussianSolveMatrix, "GaussianSolveMatrix", "results/gaussian_solve_matrix.csv");
     TestSolveFunction(LUFactorPivotSolveMatrix, "LUFactorPivotSolveMatrix", "results/lu_pivot_solve_matrix.csv");
+    TestSolveFunction(GaussianSolveMatrixBatch, "GaussianSolveMatrixBatch", "results/gaussian_batch_solve_matrix.csv");
     
 #ifdef COMPARE_TO_BLAS
     // test for blas

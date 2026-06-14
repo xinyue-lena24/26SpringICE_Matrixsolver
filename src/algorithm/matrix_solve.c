@@ -328,13 +328,15 @@ MatrixError GaussianSolveMatrixBatch(const Matrix *A, const Matrix *B, Matrix *X
         return error;
     }
 
+    REAL *U_data = U.data;
+    REAL *RHS_data = RHS.data;
+
     for (int k = 0; k < n - 1; ++k) {
         int pivot_row = k;
-        REAL pivot_abs = fabs(U.data[MatrixIndex(&U, k, k)]);
+        REAL pivot_abs = fabs(U_data[k * n + k]);
 
         for (int i = k + 1; i < n; ++i) {
-            REAL value_abs = fabs(U.data[MatrixIndex(&U, i, k)]);
-
+            REAL value_abs = fabs(U_data[i * n + k]);
             if (value_abs > pivot_abs) {
                 pivot_abs = value_abs;
                 pivot_row = i;
@@ -347,37 +349,41 @@ MatrixError GaussianSolveMatrixBatch(const Matrix *A, const Matrix *B, Matrix *X
             return MATRIX_ERROR_SINGULAR;
         }
 
-        error = MatrixSwapRows(&U, k, pivot_row);
-        if (error != MATRIX_SUCCESS) {
-            MatrixFree(&U);
-            MatrixFree(&RHS);
-            return error;
-        }
-
-        error = MatrixSwapRows(&RHS, k, pivot_row);
-        if (error != MATRIX_SUCCESS) {
-            MatrixFree(&U);
-            MatrixFree(&RHS);
-            return error;
-        }
-
-        REAL pivot = U.data[MatrixIndex(&U, k, k)];
-
-        for (int i = k + 1; i < n; ++i) {
-            REAL factor = U.data[MatrixIndex(&U, i, k)] / pivot;
-
-            U.data[MatrixIndex(&U, i, k)] = 0.0;
-
-            int idx_U_i = MatrixIndex(&U, i, 0);
-            int idx_U_k = MatrixIndex(&U, k, 0);
-            for (int j = k + 1; j < n; ++j) {
-                U.data[idx_U_i + j] -= factor * U.data[idx_U_k + j];
+        if (pivot_row != k) {
+            error = MatrixSwapRows(&U, k, pivot_row);
+            if (error != MATRIX_SUCCESS) {
+                MatrixFree(&U);
+                MatrixFree(&RHS);
+                return error;
             }
 
-            int idx_RHS_i = MatrixIndex(&RHS, i, 0);
-            int idx_RHS_k = MatrixIndex(&RHS, k, 0);
+            error = MatrixSwapRows(&RHS, k, pivot_row);
+            if (error != MATRIX_SUCCESS) {
+                MatrixFree(&U);
+                MatrixFree(&RHS);
+                return error;
+            }
+        }
+
+        REAL *Uk = U_data + k * n;
+        REAL *Rk = RHS_data + k * nrhs;
+        REAL pivot = Uk[k];
+
+        for (int i = k + 1; i < n; ++i) {
+            REAL *Ui = U_data + i * n;
+            REAL *Ri = RHS_data + i * nrhs;
+            REAL factor = Ui[k] / pivot;
+
+            Ui[k] = 0.0;
+
+            #pragma omp simd
+            for (int j = k + 1; j < n; ++j) {
+                Ui[j] -= factor * Uk[j];
+            }
+
+            #pragma omp simd
             for (int col = 0; col < nrhs; ++col) {
-                RHS.data[idx_RHS_i + col] -= factor * RHS.data[idx_RHS_k + col];
+                Ri[col] -= factor * Rk[col];
             }
         }
     }
@@ -543,6 +549,120 @@ MatrixError LUPivotSolveMatrix(const Matrix *L, const Matrix *U, const int *pivo
 /*
  * Solve A X = B by first computing no-pivot LU.
  */
+/*
+ * Internal in-place no-pivot LU factorization.
+ *
+ * The upper triangular part stores U, and the strict lower triangular part
+ * stores the elimination factors of L. The diagonal of L is implicitly 1.
+ */
+static MatrixError LUDecomposeInPlaceNoPivotLocal(Matrix *LU, REAL tol)
+{
+    if (!MatrixIsValid(LU)) {
+        return MATRIX_ERROR_NULL_POINTER;
+    }
+    if (LU->row != LU->column) {
+        return MATRIX_ERROR_NOT_SQUARE;
+    }
+
+    int n = LU->row;
+    REAL *data = LU->data;
+
+    for (int k = 0; k < n; ++k) {
+        REAL *row_k = data + k * n;
+        REAL pivot = row_k[k];
+
+        if (fabs(pivot) < tol) {
+            return MATRIX_ERROR_SINGULAR;
+        }
+
+        for (int i = k + 1; i < n; ++i) {
+            REAL *row_i = data + i * n;
+            REAL factor = row_i[k] / pivot;
+
+            row_i[k] = factor;
+
+            #pragma omp simd
+            for (int j = k + 1; j < n; ++j) {
+                row_i[j] -= factor * row_k[j];
+            }
+        }
+    }
+
+    return MATRIX_SUCCESS;
+}
+
+/*
+ * Internal solve for a compact in-place no-pivot LU factorization.
+ *
+ * LU stores U in the upper triangular part and L factors in the strict lower
+ * triangular part. The diagonal of L is implicitly 1.
+ */
+static MatrixError LUSolveInPlaceNoPivotLocal(const Matrix *LU, const Matrix *B, Matrix *X, REAL tol)
+{
+    if (!MatrixIsValid(LU) || !MatrixIsValid(B) || !MatrixIsValid(X)) {
+        return MATRIX_ERROR_NULL_POINTER;
+    }
+    if (LU->row != LU->column) {
+        return MATRIX_ERROR_NOT_SQUARE;
+    }
+    if (B->row != LU->row || X->row != LU->row || X->column != B->column) {
+        return MATRIX_ERROR_SIZE_MISMATCH;
+    }
+
+    int n = LU->row;
+    int nrhs = B->column;
+
+    MatrixError error = MatrixCopy(B, X);
+    if (error != MATRIX_SUCCESS) {
+        return error;
+    }
+
+    const REAL *lu = LU->data;
+    REAL *x = X->data;
+
+    /* Forward substitution: L Y = B. L has unit diagonal. */
+    for (int i = 0; i < n; ++i) {
+        REAL *Xi = x + i * nrhs;
+
+        for (int j = 0; j < i; ++j) {
+            REAL lij = lu[i * n + j];
+            const REAL *Xj = x + j * nrhs;
+
+            #pragma omp simd
+            for (int col = 0; col < nrhs; ++col) {
+                Xi[col] -= lij * Xj[col];
+            }
+        }
+    }
+
+    /* Back substitution: U X = Y. */
+    for (int i = n - 1; i >= 0; --i) {
+        REAL *Xi = x + i * nrhs;
+
+        for (int j = i + 1; j < n; ++j) {
+            REAL uij = lu[i * n + j];
+            const REAL *Xj = x + j * nrhs;
+
+            #pragma omp simd
+            for (int col = 0; col < nrhs; ++col) {
+                Xi[col] -= uij * Xj[col];
+            }
+        }
+
+        REAL diag = lu[i * n + i];
+        if (fabs(diag) < tol) {
+            return MATRIX_ERROR_SINGULAR;
+        }
+
+        #pragma omp simd
+        for (int col = 0; col < nrhs; ++col) {
+            Xi[col] /= diag;
+        }
+    }
+
+    return MATRIX_SUCCESS;
+}
+
 MatrixError LUFactorSolveMatrix(const Matrix *A, const Matrix *B, Matrix *X, REAL tol)
 {
     MatrixError error = CheckLinearSystemMatrix(A, B, X);
@@ -552,28 +672,26 @@ MatrixError LUFactorSolveMatrix(const Matrix *A, const Matrix *B, Matrix *X, REA
 
     int n = A->row;
 
-    Matrix L, U;
-    MatrixInit(&L);
-    MatrixInit(&U);
+    Matrix LU;
+    MatrixInit(&LU);
 
-    error = MatrixCreate(&L, n, n);
+    error = MatrixCreate(&LU, n, n);
     if (error != MATRIX_SUCCESS) {
         return error;
     }
 
-    error = MatrixCreate(&U, n, n);
+    error = MatrixCopy(A, &LU);
     if (error != MATRIX_SUCCESS) {
-        MatrixFree(&L);
+        MatrixFree(&LU);
         return error;
     }
 
-    error = LUDecomposeNoPivot(A, &L, &U, tol);
+    error = LUDecomposeInPlaceNoPivotLocal(&LU, tol);
     if (error == MATRIX_SUCCESS) {
-        error = LUSolveMatrix(&L, &U, B, X, tol);
+        error = LUSolveInPlaceNoPivotLocal(&LU, B, X, tol);
     }
 
-    MatrixFree(&L);
-    MatrixFree(&U);
+    MatrixFree(&LU);
     return error;
 }
 

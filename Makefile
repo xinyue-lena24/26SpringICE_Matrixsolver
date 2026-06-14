@@ -5,7 +5,8 @@ LDFLAGS = -lm
 
 ifeq ($(COMPARE_TO_BLAS),1)
 	CFLAGS += -DCOMPARE_TO_BLAS
-	LDFLAGS += -lopenblas
+	CPPFLAGS += -isystem $(CONDA_PREFIX)/include
+	LDFLAGS += -L$(CONDA_PREFIX)/lib -Wl,-rpath,$(CONDA_PREFIX)/lib -llapacke -llapack -lopenblas
 endif
 
 CORE_SRCS = src/core/matrix_core.c src/core/matrix_ops.c
@@ -46,6 +47,9 @@ run-mul: main_timing_mul results
 run-solve: main_timing_solve results
 	./main_timing_solve
 
+run-solve-blas: main_timing_solve results
+	OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 GOTO_NUM_THREADS=1 ./main_timing_solve
+
 run-all: all results
 	./main_basic
 	./main_timing_ops
@@ -56,4 +60,4 @@ clean:
 	rm -f $(TARGETS) *.o *.exe *.out
 	rm -f results/*.csv
 
-.PHONY: all results run run-basic run-ops run-mul run-solve run-all clean
+.PHONY: all results run run-basic run-ops run-mul run-solve run-solve-blas run-all clean

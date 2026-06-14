@@ -119,7 +119,7 @@ project/
 * `MatrixSwapRows` — 交换矩阵两行
 * `GaussianSolvePartialPivot` — 部分选主元 Gauss 消元法求解 `Ax = b`
 * `GaussianSolveMultiple` — 逐列调用 Gauss 消元法求解多右端项系统 `AX = B`
-* `GaussianSolveMultipleBatch` — 对增广矩阵 `[A|B]` 进行一次 Gauss 消元，批量求解 `AX = B`
+* `GaussianSolveMatrixBatch` — 对增广矩阵 `[A|B]` 进行一次 Gauss 消元，批量求解多右端项系统 `AX = B`
 * `LUSolve` — 由已有无主元 LU 分解求解 `LUx = b`
 * `LUSolveMultiple` — 由已有无主元 LU 分解求解 `LUX = B`
 * `LUSolveWithPivot` — 由带主元 LU 分解求解 `LUx = Pb`
@@ -177,12 +177,28 @@ conda env create -p ~/conda_envs/c_matrix -f environment.yml
 conda activate ~/conda_envs/c_matrix
 ```
 
-环境创建并激活后，使用：
+环境创建并激活后，先使用：
 
 ```bash
 make clean
 make all COMPARE_TO_BLAS=1
 ```
+
+然后推荐使用单线程 OpenBLAS/LAPACKE 对比运行方式：
+
+```bash
+make run-solve-blas
+```
+
+其中 `run-solve-blas` 会临时设置：
+
+```text
+OPENBLAS_NUM_THREADS=1
+OMP_NUM_THREADS=1
+GOTO_NUM_THREADS=1
+```
+
+这样可以避免小规模矩阵测试受到 OpenBLAS 多线程调度开销影响。
 
 此时 Makefile 会定义：
 
@@ -297,10 +313,11 @@ make run-solve
 ```text
 results/lu_solve_matrix.csv
 results/gaussian_solve_matrix.csv
+results/gaussian_batch_solve_matrix.csv
 results/lu_pivot_solve_matrix.csv
 ```
 
-若编译时使用了 `COMPARE_TO_BLAS=1`，则 `make run-solve` 还会包含 OpenBLAS/LAPACKE 对比，并额外生成：
+若编译时使用了 `COMPARE_TO_BLAS=1`，则推荐使用 `make run-solve-blas` 运行 OpenBLAS/LAPACKE 对比，并额外生成：
 
 ```text
 results/blas_solve.csv
@@ -348,6 +365,48 @@ LAPACKE_dgesv
 
 ---
 
+## 性能优化说明
+
+本项目在保持用户接口不变的前提下，对线性方程组求解部分进行了若干实现层面的优化。
+
+### 多右端项批量 Gauss 消元
+
+对于多右端项线性系统
+
+```text
+AX = B
+```
+
+项目提供批量 Gauss 消元实现。该方法对系数矩阵 `A` 只进行一次消元，并在消元过程中同时更新 `B` 的所有列，从而避免逐列重复求解带来的额外开销。
+
+对应结果文件为：
+
+```text
+results/gaussian_batch_solve_matrix.csv
+```
+
+### LU 求解器的内部 in-place 实现
+
+`LUFactorSolveMatrix` 的对外接口保持不变：
+
+```c
+MatrixError LUFactorSolveMatrix(const Matrix *A, const Matrix *B, Matrix *X, REAL tol);
+```
+
+在内部实现上，该函数使用 compact in-place LU 存储方式：上三角部分存储 `U`，严格下三角部分存储 `L` 的消元因子，而 `L` 的对角线默认视为 1，不再显式存储。这样可以减少额外矩阵分配和数据写入开销，使实现方式更接近常见数值线性代数库的内部存储思路。
+
+### OpenBLAS/LAPACKE 对比运行
+
+启用 OpenBLAS/LAPACKE 对比时，推荐使用：
+
+```bash
+make run-solve-blas
+```
+
+该命令会以单线程方式运行 OpenBLAS/LAPACKE 对比测试，避免小规模矩阵测试受到多线程调度开销影响。
+
+---
+
 ## 结果文件
 
 运行不同测试后，`results/` 文件夹中会生成 CSV 文件。常见输出包括：
@@ -357,11 +416,12 @@ results/ops_results.csv
 results/mul_results.csv
 results/lu_solve_matrix.csv
 results/gaussian_solve_matrix.csv
+results/gaussian_batch_solve_matrix.csv
 results/lu_pivot_solve_matrix.csv
 results/blas_solve.csv
 ```
 
-其中 `results/blas_solve.csv` 只会在启用 `COMPARE_TO_BLAS=1` 编译并运行 `make run-solve` 后生成。
+其中 `results/blas_solve.csv` 只会在启用 `COMPARE_TO_BLAS=1` 编译，并运行 `make run-solve` 或 `make run-solve-blas` 后生成。进行 OpenBLAS/LAPACKE 性能对比时，推荐使用 `make run-solve-blas`。
 
 ---
 
@@ -388,4 +448,4 @@ make all COMPARE_TO_BLAS=1
 1. 默认版本不依赖 OpenBLAS/LAPACK，便于在普通 C 环境中直接编译。
 2. OpenBLAS/LAPACKE 只用于性能对比，不是项目核心矩阵库的强制依赖。
 3. 如果在服务器上没有写入系统 Conda 环境的权限，可以使用 `conda env create -p ~/conda_envs/c_matrix -f environment.yml` 在用户目录下创建环境。
-4. 如果需要运行 OpenBLAS/LAPACKE 对比，请先激活对应 Conda 环境，再使用 `COMPARE_TO_BLAS=1` 编译。
+4. 如果需要运行 OpenBLAS/LAPACKE 对比，请先激活对应 Conda 环境，再使用 `COMPARE_TO_BLAS=1` 编译，并推荐通过 `make run-solve-blas` 运行求解器性能测试。
