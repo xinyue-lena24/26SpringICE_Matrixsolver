@@ -549,6 +549,120 @@ MatrixError LUPivotSolveMatrix(const Matrix *L, const Matrix *U, const int *pivo
 /*
  * Solve A X = B by first computing no-pivot LU.
  */
+/*
+ * Internal in-place no-pivot LU factorization.
+ *
+ * The upper triangular part stores U, and the strict lower triangular part
+ * stores the elimination factors of L. The diagonal of L is implicitly 1.
+ */
+static MatrixError LUDecomposeInPlaceNoPivotLocal(Matrix *LU, REAL tol)
+{
+    if (!MatrixIsValid(LU)) {
+        return MATRIX_ERROR_NULL_POINTER;
+    }
+    if (LU->row != LU->column) {
+        return MATRIX_ERROR_NOT_SQUARE;
+    }
+
+    int n = LU->row;
+    REAL *data = LU->data;
+
+    for (int k = 0; k < n; ++k) {
+        REAL *row_k = data + k * n;
+        REAL pivot = row_k[k];
+
+        if (fabs(pivot) < tol) {
+            return MATRIX_ERROR_SINGULAR;
+        }
+
+        for (int i = k + 1; i < n; ++i) {
+            REAL *row_i = data + i * n;
+            REAL factor = row_i[k] / pivot;
+
+            row_i[k] = factor;
+
+            #pragma omp simd
+            for (int j = k + 1; j < n; ++j) {
+                row_i[j] -= factor * row_k[j];
+            }
+        }
+    }
+
+    return MATRIX_SUCCESS;
+}
+
+/*
+ * Internal solve for a compact in-place no-pivot LU factorization.
+ *
+ * LU stores U in the upper triangular part and L factors in the strict lower
+ * triangular part. The diagonal of L is implicitly 1.
+ */
+static MatrixError LUSolveInPlaceNoPivotLocal(const Matrix *LU, const Matrix *B, Matrix *X, REAL tol)
+{
+    if (!MatrixIsValid(LU) || !MatrixIsValid(B) || !MatrixIsValid(X)) {
+        return MATRIX_ERROR_NULL_POINTER;
+    }
+    if (LU->row != LU->column) {
+        return MATRIX_ERROR_NOT_SQUARE;
+    }
+    if (B->row != LU->row || X->row != LU->row || X->column != B->column) {
+        return MATRIX_ERROR_SIZE_MISMATCH;
+    }
+
+    int n = LU->row;
+    int nrhs = B->column;
+
+    MatrixError error = MatrixCopy(B, X);
+    if (error != MATRIX_SUCCESS) {
+        return error;
+    }
+
+    const REAL *lu = LU->data;
+    REAL *x = X->data;
+
+    /* Forward substitution: L Y = B. L has unit diagonal. */
+    for (int i = 0; i < n; ++i) {
+        REAL *Xi = x + i * nrhs;
+
+        for (int j = 0; j < i; ++j) {
+            REAL lij = lu[i * n + j];
+            const REAL *Xj = x + j * nrhs;
+
+            #pragma omp simd
+            for (int col = 0; col < nrhs; ++col) {
+                Xi[col] -= lij * Xj[col];
+            }
+        }
+    }
+
+    /* Back substitution: U X = Y. */
+    for (int i = n - 1; i >= 0; --i) {
+        REAL *Xi = x + i * nrhs;
+
+        for (int j = i + 1; j < n; ++j) {
+            REAL uij = lu[i * n + j];
+            const REAL *Xj = x + j * nrhs;
+
+            #pragma omp simd
+            for (int col = 0; col < nrhs; ++col) {
+                Xi[col] -= uij * Xj[col];
+            }
+        }
+
+        REAL diag = lu[i * n + i];
+        if (fabs(diag) < tol) {
+            return MATRIX_ERROR_SINGULAR;
+        }
+
+        #pragma omp simd
+        for (int col = 0; col < nrhs; ++col) {
+            Xi[col] /= diag;
+        }
+    }
+
+    return MATRIX_SUCCESS;
+}
+
 MatrixError LUFactorSolveMatrix(const Matrix *A, const Matrix *B, Matrix *X, REAL tol)
 {
     MatrixError error = CheckLinearSystemMatrix(A, B, X);
@@ -558,28 +672,26 @@ MatrixError LUFactorSolveMatrix(const Matrix *A, const Matrix *B, Matrix *X, REA
 
     int n = A->row;
 
-    Matrix L, U;
-    MatrixInit(&L);
-    MatrixInit(&U);
+    Matrix LU;
+    MatrixInit(&LU);
 
-    error = MatrixCreate(&L, n, n);
+    error = MatrixCreate(&LU, n, n);
     if (error != MATRIX_SUCCESS) {
         return error;
     }
 
-    error = MatrixCreate(&U, n, n);
+    error = MatrixCopy(A, &LU);
     if (error != MATRIX_SUCCESS) {
-        MatrixFree(&L);
+        MatrixFree(&LU);
         return error;
     }
 
-    error = LUDecomposeNoPivot(A, &L, &U, tol);
+    error = LUDecomposeInPlaceNoPivotLocal(&LU, tol);
     if (error == MATRIX_SUCCESS) {
-        error = LUSolveMatrix(&L, &U, B, X, tol);
+        error = LUSolveInPlaceNoPivotLocal(&LU, B, X, tol);
     }
 
-    MatrixFree(&L);
-    MatrixFree(&U);
+    MatrixFree(&LU);
     return error;
 }
 
