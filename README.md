@@ -365,6 +365,48 @@ LAPACKE_dgesv
 
 ---
 
+## 性能优化说明
+
+本项目在保持用户接口不变的前提下，对线性方程组求解部分进行了若干实现层面的优化。
+
+### 多右端项批量 Gauss 消元
+
+对于多右端项线性系统
+
+```text
+AX = B
+```
+
+项目提供批量 Gauss 消元实现。该方法对系数矩阵 `A` 只进行一次消元，并在消元过程中同时更新 `B` 的所有列，从而避免逐列重复求解带来的额外开销。
+
+对应结果文件为：
+
+```text
+results/gaussian_batch_solve_matrix.csv
+```
+
+### LU 求解器的内部 in-place 实现
+
+`LUFactorSolveMatrix` 的对外接口保持不变：
+
+```c
+MatrixError LUFactorSolveMatrix(const Matrix *A, const Matrix *B, Matrix *X, REAL tol);
+```
+
+在内部实现上，该函数使用 compact in-place LU 存储方式：上三角部分存储 `U`，严格下三角部分存储 `L` 的消元因子，而 `L` 的对角线默认视为 1，不再显式存储。这样可以减少额外矩阵分配和数据写入开销，使实现方式更接近常见数值线性代数库的内部存储思路。
+
+### OpenBLAS/LAPACKE 对比运行
+
+启用 OpenBLAS/LAPACKE 对比时，推荐使用：
+
+```bash
+make run-solve-blas
+```
+
+该命令会以单线程方式运行 OpenBLAS/LAPACKE 对比测试，避免小规模矩阵测试受到多线程调度开销影响。
+
+---
+
 ## 结果文件
 
 运行不同测试后，`results/` 文件夹中会生成 CSV 文件。常见输出包括：
